@@ -1,2 +1,2 @@
 # grinder
-The lean mean static site... generation... thing
+The lean mean static... builder... thing. NOT ready for production.

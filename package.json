@@ -1,0 +1,29 @@
+{
+  "name": "grinder",
+  "version": "0.1.0",
+  "description": "A lean mean static... build... thing",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hoichi/grinder.git"
+  },
+  "keywords": [
+    "static",
+    "build",
+    "generator",
+    "site"
+  ],
+  "author": "Sergey Samokhov <hi@hoichi.io> (https://hoichi.io)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hoichi/grinder/issues"
+  },
+  "homepage": "https://github.com/hoichi/grinder#readme",
+  "dependencies": {
+    "front-matter": "^2.0.5",
+    "lodash": "^4.3.0"
+  }
+}
