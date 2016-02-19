@@ -2,163 +2,71 @@
 
 const   fm      = require('front-matter'),
         fs      = require('fs'),
-        _       = require('lodash'),
+        _       = require('lodash'),    // todo: https://medium.com/making-internets/why-using-chain-is-a-mistake-9bc1f80d51ba#.azak8kbwc
         path    = require('path'),
         u       = require('./utils.js'),
         url     = require('url');
 
+/*
+  Jekyll vars
+  ===========
 
-function pageFabric() {
-    var _p = {
-        isReady: false,
-        category: [],       //  post category. not sure about multiple categories
-                            //      but let's not rule the out yet
-        content: '',        //  post content in HTML (HTML is lingua franca and we're agnostic
-                            //      of original markup as much as possible)
-        date: new Date(),   //  a dateString, etc. '25 Dec 1995 13:30:00 +0430'
-        description: '',    //  post description for meta, search engines and prob. TOCs and archive stuff
-        excerpt: '',        //  before the fold
-        path: '',           //  the part between the building dir and the slug
-        published: true,    //  if a page is published (same as Jekyll)
-        site: null,         //  the object for the site that contains the page
-        slug: '',           //  the part of the URL after the last slash
-        style: {},          //  looks specific to the page, maybe? does nothing so far
-        tags: [],           //  a bunch of post tags
-        template: '',       //  the template used for page rendering
-        title: ''
-    };
+page.content
+ The content of the Page, rendered or un-rendered depending upon what Liquid is being processed and what page is.
 
-    return getApi();
+page.title
 
-    function getApi() {
-        return {
-            get category()      {return ifReady(_p.category)},
-            get content()       {return ifReady(_p.content)},
-            get date()          {return ifReady(_p.date)},
-            get description()   {return ifReady(_p.description)},
-            get excerpt()       {return ifReady(_p.excerpt)},
-            get href()          {return ifReady(`/${_p.path}/${_p.slug}/`)},
-            get published()     {return ifReady(_p.published)},
-            get path()          {return ifReady(_p.path)},
-            get slug()          {return ifReady(_p.slug)},
-            get style()         {return ifReady(_p.style)},
-            get tags()          {return ifReady(_p.tags)},
-            get template()      {return ifReady(_p.template)},
-            get time()          {return ifReady(_p.date)},
-            get title()         {return ifReady(_p.title)},
+page.excerpt
+ The un-rendered excerpt of the Page.
 
-            prev() {return _site.prev(_index)},         // todo
+page.url
+ The URL of the Post without the domain, but with a leading slash, e.g. /2008/12/14/my-post.html
 
-            next() {return _site.next(_index)},         // todo
+page.date
+ The Date assigned to the Post. This can be overridden in a Post’s front matter by specifying a new date/time in the format YYYY-MM-DD HH:MM:SS (assuming UTC), or YYYY-MM-DD HH:MM:SS +/-TTTT (to specify a time zone using an offset from UTC. e.g. 2008-12-14 10:30:00 +0900).
 
-            ready,
-            fromSource
-        };
+page.id
+ An identifier unique to the Post (useful in RSS feeds). e.g. /2008/12/14/my-post
+
+page.categories
+ The list of categories to which this post belongs. Categories are derived from the directory structure above the _posts directory. For example, a post at /work/code/_posts/2008-12-24-closures.md would have this field set to ['work', 'code']. These can also be specified in the YAML Front Matter.
+
+page.tags
+ The list of tags to which this post belongs. These can be specified in the YAML Front Matter.
+
+page.path
+ The path to the raw post or page. Example usage: Linking back to the page or post’s source on GitHub. This can be overridden in the YAML Front Matter.
+
+page.next
+ The next post relative to the position of the current post in site.posts. Returns nil for the last entry.
+
+page.previous
+
+*/
+
+function PageConstructorFabric() {
+    function PageConstructor() {
+        if (!this instanceof PageConstructor) {
+            return new PageConstructor();
+        }
+
+        //todo: freeze
     }
 
-    /*
-     *  Takes a source object with a source path etc. And the options from the global config.
-     */
-    function fromSource(source, site, options) {
-        // fixme: do we need defaults _here_?
-        const   cfg = Object.assign({
-                    defCat: {title: 'blog', slug: 'blog'},
-                    extensions: '*',
-                    encoding: 'UTF-8',
-                    markup: s => s,  /* do nufin' by default. agnostic, muthafucka! */
-                    rootDir: __dirname
-                }, options);
-
-        const baseParser = new RegExp(`(.*)\.(${cfg.extensions})`);
-
-        var rel = path.relative(cfg.rootDir, source.path),
-            base = path.basename(rel).match(baseParser)[1],
-            dir = path.dirname(rel),
-            srcCont = source.contents.toString(cfg.encoding),
-            meta,
-            body;
-
-        try {
-            ({attributes: meta, body} = fm(srcCont));
-        } catch(Err) {
-            throw new Error(`Reading front-matter failed (${Err.message})`);
-        }
-
-        try {
-            _p.content = cfg.markup(body);
-        } catch(Err) {
-            throw new Error(`Markup conversion failed (${Err.message})`);
-        }
-
-        const pageDefaults = {
-            category: cfg.defCat,
-            path: cfg.defCat.slug,
-            /* $TODO: maybe parse default path from the relative path? Or maybe it should be a callback/template from cfg (or passed options) that can use relative path, category, default category, whatevs. */
-            published: meta.title && body && true,  // if it looks ready, it's ready by default
-            slug: u.slugify(meta.title),
-            template: 'single',
-            title: '* * *'
-        };
-
-        _.assign(
-            _p,
-            pageDefaults,
-            meta,
-            {
-                site: site,
-                isReady: true
+    Object.defineProperties(PageConstructor.prototype, {
+        fromSource: {
+            value: (file, options) => {
+            //    todo: options defaults
+            //    todo: read file (and fill .path)
+            //    todo: yfm to meta
+            //    todo: excerpt (meta || first paragraph), content conversion
+            //    todo: site, prev/next, url (callback?)
             }
-        );
-
-        // some post-meta logic
-        if (!_p.excerpt) {
-            [, _p.excerpt] = /<p>(.*)?<\/p>/.exec(_p.content);
-            _p.excerpt = _p.excerpt.replace(/<(.|\n)*?>/g, '')
-            // $TODO: take it from non-parsed markdown? maybe?
-            // $TODO: look up all those excerpts, teasers and other page anatomy
+        },
+        next: {
+            get: () => {/* todo: or should it be a simple value set by .collect()? */}
         }
+    });
 
-        if (!_p.published) {
-            // not sure if it actually frees any memory immediately but let's try
-            // $TODO: and hey, how 'bout an object pool?
-            _p.content = ''; _p.description = ''; _p.excerpt = '';
-        }
-
-        return getApi();
-    }
-
-    function ifReadyCb(cb) {
-        if (!_p.isReady) {
-            throw new Error('Object Page should be properly filled before you can consume it\'s data. Use `fromSource` or something.');
-        } else {
-            return cb();
-        }
-    }
-
-    function ifReady(val) {
-        if (!_p.isReady) {
-            throw new Error(`Object Page should be properly filled before you can consume it's data. Use \`fromSource\` or something.`);
-        } else {
-            return val;
-        }
-    }
-
-    function ready(val) {
-        if (typeof val !== 'undefined' &&
-            (val !== null || typeofval !== 'object') )
-        {
-            _p.isReady = !!val;
-        }
-
-        return val;
-    }
-
-    function getCrumbs() {
-        var crumbs = [{path: '/'}];
-    }
-}
-
-
-export default {
-    create: pageFabric
+    return PageConstructor;
 }
