@@ -44,31 +44,72 @@ page.previous
 
 */
 
+/*
+ function drawES6Chart({size = 'big', cords = { x: 0, y: 0 }, radius = 25} = {}) {
+ console.log(size, cords, radius);
+ // do some chart drawing
+ }
+
+ // In Firefox, default values for destructuring assignments are not yet implemented (as described below).
+ // The workaround is to write the parameters in the following way:
+ // ({size: size = 'big', cords: cords = { x: 0, y: 0 }, radius: radius = 25} = {})
+
+ drawES6Chart({
+ cords: { x: 18, y: 30 },
+ radius: 30
+ });
+*/
+
 function PageConstructorFabric() {
     function PageConstructor() {
         if (!this instanceof PageConstructor) {
             return new PageConstructor();
         }
 
-        //todo: freeze
+        /*  fixme:
+            Do we need a constructor separate from fromSource/fromSourceSync?
+            Sure, we do need that [new] boilerplate and all that prototype stuff.
+            But fromSource[...] is a constructor and should be a module property, pageFromSource or smth.
+        */
+
+        return this;
     }
 
     Object.defineProperties(PageConstructor.prototype, {
-        fromSource: {
-            value: (file, options) => {
-                var cfg = Object.assign({}, options, {
-                        fsOptions: {
-                            encoding: 'UTF-8',
-                            flag: 'r'
-                        }
-                    });
+        fromSourceSync: {
+            value:
+            (   path,
+                {   /* here be options */
+                    converter = s => s,
+                    fsOptions: {fsEncoding = 'UTF-8', fsFlag = 'r'}
+                }
+            ) => {
+                try {
+                    //    todo: normalize `path`
+                    let {attributes: meta, body: raw} = fm(fs.readFileSync(path, {fsEncoding, fsFlag}));
 
-                fs.readFile();
-            //    todo: options defaults
-            //    todo: read file (and fill .path)
-            //    todo: yfm to meta
-            //    todo: excerpt (meta || first paragraph), content conversion
-            //    todo: site, prev/next, url (callback?)
+                    if (!meta.title || !meta.date || !content) {
+                        throw new Error(`A page has to have at least a title, a date and some content. Looking at ya, ${path}.`);
+                    }
+
+                    this.content = converter(raw);
+                    this.date = new Date(meta.date);
+                    this.excerpt = meta.excerpt || firstParagraph(content);
+                    this.tags = (meta.tags && meta.tags.split(/(,|\s)+/g)) || [];
+                    this.title = meta.title;
+                    // this.url should probably set when we call page.render()
+
+                    /* todo: Categories (Jekyll: /work/code/... -> ['work', 'code']. Should we need more flexibility?) */
+                    //  todo: set getters for url, next etc. that says it's not initialized yet. and don't fucking freeze 'em
+                    //    todo: site, prev/next, url (callback?)
+
+
+                } catch(e) {
+                    throw e;
+                }
+
+                (path, fsOptions, () => {
+                });
             }
         },
         next: {
@@ -77,4 +118,9 @@ function PageConstructorFabric() {
     });
 
     return PageConstructor;
+}
+
+function firstParagraph(html) {
+    let [, paragraph] = /<p>(.*)?<\/p>/.exec(html);
+    return paragraph.replace(/<(.|\n)*?>/g, '');
 }

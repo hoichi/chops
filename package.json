@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hoichi/grinder.git"
+    "url": "git+https://github.com/hoichi/silkworm.git"
   },
   "keywords": [
     "static",
@@ -19,9 +19,9 @@
   "author": "Sergey Samokhov <hi@hoichi.io> (https://hoichi.io)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/hoichi/grinder/issues"
+    "url": "https://github.com/hoichi/silkworm/issues"
   },
-  "homepage": "https://github.com/hoichi/grinder#readme",
+  "homepage": "https://github.com/hoichi/silkworm#readme",
   "dependencies": {
     "front-matter": "^2.0.5",
     "lodash": "^4.3.0"
