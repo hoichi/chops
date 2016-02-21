@@ -56,6 +56,14 @@ function PageConstructorFabric() {
     Object.defineProperties(PageConstructor.prototype, {
         fromSource: {
             value: (file, options) => {
+                var cfg = Object.assign({}, options, {
+                        fsOptions: {
+                            encoding: 'UTF-8',
+                            flag: 'r'
+                        }
+                    });
+
+                fs.readFile();
             //    todo: options defaults
             //    todo: read file (and fill .path)
             //    todo: yfm to meta

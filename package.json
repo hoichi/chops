@@ -1,5 +1,5 @@
 {
-  "name": "grinder",
+  "name": "silkworm",
   "version": "0.1.0",
   "description": "A lean mean static... build... thing",
   "main": "index.js",
