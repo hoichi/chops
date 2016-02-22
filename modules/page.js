@@ -80,22 +80,38 @@ function PageConstructorFabric() {
             value:
             (   path,
                 {   /* here be options */
-                    converter = s => s,
+                    converter = plainTextToHtml,
                     fsOptions: {fsEncoding = 'UTF-8', fsFlag = 'r'}
                 }
             ) => {
                 try {
-                    //    todo: normalize `path`
-                    let {attributes: meta, body: raw} = fm(fs.readFileSync(path, {fsEncoding, fsFlag}));
+                    //  todo: normalize path, check if the file exists
+                    //  todo: separate default values?
+                    let {attributes: meta, body: raw} = fm(fs.readFileSync(path, {fsEncoding, fsFlag})),
+                        content, excerpt;
 
-                    if (!meta.title || !meta.date || !content) {
-                        throw new Error(`A page has to have at least a title, a date and some content. Looking at ya, ${path}.`);
+                    if (!meta.title || !meta.date || !raw) {
+                        throw Error(`A page has to have at least a title, a date and some content. Looking at ya, ${path}.`);
                     }
 
-                    this.content = converter(raw);
+                    // convert content
+                    // todo: wrap it in a function that checks for errors and returns {content, expcerpt}
+                    content = converter(raw);
+
+                    if (content && content.content) {
+                        ({content, excerpt} = content);
+                    } else if (typeof content === `string`) {
+                        excerpt = firstParagraph(content);
+                    } else {
+                        throw Error(`Wrong page content after convertions. Page source is ${path}, if it helps.`);
+                    }
+
+                    //todo: check date
+
+                    this.content = content;
                     this.date = new Date(meta.date);
-                    this.excerpt = meta.excerpt || firstParagraph(content);
-                    this.tags = (meta.tags && meta.tags.split(/(,|\s)+/g)) || [];
+                    this.excerpt = excerpt;
+                    this.tags = ( meta.tags && meta.tags.split(/(,|\s)+/g) ) || []; //todo: maybe allow spaces in tags?
                     this.title = meta.title;
                     // this.url should probably set when we call page.render()
 
@@ -108,8 +124,7 @@ function PageConstructorFabric() {
                     throw e;
                 }
 
-                (path, fsOptions, () => {
-                });
+                return this;
             }
         },
         next: {
@@ -118,6 +133,20 @@ function PageConstructorFabric() {
     });
 
     return PageConstructor;
+}
+
+function plainTextToHtml(s) {
+    let paragraphs = s.split(/(\s*\n){2,}/g);
+    if (!paragraphs.length) {
+        throw new Error(`You could’t even pass ONE paragraph? Wow. Just... wow.`);
+    }
+
+    let paragrAdder = (article, paragraph) => article + `<p>${paragraph.replace(/\s*\n/g, '<br>\n')}</p>\n\n`;
+
+    return {
+        content: paragraphs.reduce(paragrAdder, ``),
+        excerpt: paragrAdder(``, paragraphs[0])
+    };
 }
 
 function firstParagraph(html) {
