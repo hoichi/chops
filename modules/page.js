@@ -3,7 +3,7 @@
 const   fm      = require('front-matter'),
         fs      = require('fs'),
         _       = require('lodash'),    // todo: https://medium.com/making-internets/why-using-chain-is-a-mistake-9bc1f80d51ba#.azak8kbwc
-        path    = require('path'),
+        mPath    = require('path'),
         u       = require('./utils.js'),
         url     = require('url');
 
@@ -81,36 +81,30 @@ function PageConstructorFabric() {
             (   path,
                 {   /* here be options */
                     converter = plainTextToHtml,
-                    fsOptions: {fsEncoding = 'UTF-8', fsFlag = 'r'}
+                    cwd = process.cwd(),
+                    encoding = 'UTF-8',
+                    extensions = '*',
                 }
             ) => {
                 try {
-                    //  todo: normalize path, check if the file exists
-                    //  todo: separate default values?
-                    let {attributes: meta, body: raw} = fm(fs.readFileSync(path, {fsEncoding, fsFlag})),
+                    let {dirs, ext, name, rel} = parsePath(path, cwd),
+                        {attributes: meta, body: srcBody} = fm( fs.readFileSync(path, {encoding}) );
                         content, excerpt;
 
-                    if (!meta.title || !meta.date || !raw) {
-                        throw Error(`A page has to have at least a title, a date and some content. Looking at ya, ${path}.`);
+                    if (!meta.title || !meta.date || !srcBody) {
+                        throw Error(`A page has to have at least a title, date and some content.
+                                        Looking at ya, ${path}.`);
                     }
 
                     // convert content
-                    // todo: wrap it in a function that checks for errors and returns {content, expcerpt}
-                    content = converter(raw);
-
-                    if (content && content.content) {
-                        ({content, excerpt} = content);
-                    } else if (typeof content === `string`) {
-                        excerpt = firstParagraph(content);
-                    } else {
-                        throw Error(`Wrong page content after convertions. Page source is ${path}, if it helps.`);
-                    }
+                    ({content, excerpt} = convertToHtml(srcBody, converter));
 
                     //todo: check date
 
                     this.content = content;
                     this.date = new Date(meta.date);
                     this.excerpt = excerpt;
+                    this.published = meta.published === undefined || meta.published;
                     this.tags = ( meta.tags && meta.tags.split(/(,|\s)+/g) ) || []; //todo: maybe allow spaces in tags?
                     this.title = meta.title;
                     // this.url should probably set when we call page.render()
@@ -152,4 +146,39 @@ function plainTextToHtml(s) {
 function firstParagraph(html) {
     let [, paragraph] = /<p>(.*)?<\/p>/.exec(html);
     return paragraph.replace(/<(.|\n)*?>/g, '');
+}
+/*
+* Takes a path (and a working dir)
+* returns an object with:
+* - file base (sans extension)
+* - an arr of parent dirs
+* */
+function parsePath(path, cwd) {
+// todo: should we move it to Utils?
+// todo: check if file actually exists? or is senseless if we get it from Glob or smth? it kinda should fail gracefuly if it't removed by the time we get here
+    let {root, dir, base, ext, name} = mPath.parse( mPath.resolve(path) ),
+        rel = path.relative(cwd, dir),
+        dirs = rel.split(mPath.sep);
+
+    return {
+        dirs,
+        ext,
+        name,
+        rel
+    }
+}
+
+function convertToHtml(source, converter) {
+    let content = converter(source),
+        excerpt;
+
+    if (content && content.content) {
+        ({content, excerpt} = content);
+    } else if (typeof content === `string`) {
+        excerpt = firstParagraph(content);
+    } else {
+        throw Error(`Wrong page content after convertions. Page source is ${path}, if it helps.`);
+    }
+
+    return {content, excerpt};
 }
