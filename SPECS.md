@@ -11,6 +11,7 @@ We do retrieve meta, but we don't know what to do with it.
     - a page doesn't know its `url` until it's written (and we probably should allow using html without writing). and it doesn't know its `next` and `previous` until it's _collected_. so... object composition? callbacks again? or it just plain cannot be overly agnostic of them collections, site etc.
         - btw, `next` and `previous` easily default to `null` or smth. that said, should we give public methods to set it? or maybe these properties should have getters and setters, after all. their values in console.info() are not that important
     - that said, it would be nice to be able to use pages module per se, without collector
+
 - COLLECTIONS
     - add pages to collections
     - sorting is optional (and configurable)
@@ -21,6 +22,19 @@ We do retrieve meta, but we don't know what to do with it.
         page = silkworm.PageFromSource(/**/);
         site.collections.blog.addPage(page, {sorted: {by: 'date', desc: true}});
     ```
+    
+- SITE
+    - we need vars for templates
+    - one site by default. multiple sites with constructor
+    - settings like
+    
+- TEMPLATES
+    - walk and compile
+    - Helper/filters. I do believe we should just give a set of data and helpers to a callback and let it feed all that to underlying templates. we shouldn't have to figure out:
+        - pure functions (Jade),
+        - filters (`swig.setFilter('foobar', (input, idx) => {/* ... */});`)
+        - wrappers (lambdas in Mustache)
+    
 - WATCH/FILEWALKER
     - update all dependable html _and_ collections
     - so we should know where all the sources and targets are
