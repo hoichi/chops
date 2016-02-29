@@ -84,12 +84,15 @@ function PageConstructorFabric() {
                     cwd = process.cwd(),
                     encoding = 'UTF-8',
                     extensions = '*',
+                    reader = raw => {let {attributes: meta, body} = fm(raw); return {meta, body};}
                 }
             ) => {
                 try {
                     let {dirs, ext, name, rel} = parsePath(path, cwd),
-                        {attributes: meta, body: srcBody} = fm( fs.readFileSync(path, {encoding}) );
+                        {meta, body: srcBody} = runFileReader(path, reader, {encoding}),
                         content, excerpt;
+
+
 
                     if (!meta.title || !meta.date || !srcBody) {
                         throw Error(`A page has to have at least a title, date and some content.
@@ -97,7 +100,7 @@ function PageConstructorFabric() {
                     }
 
                     // convert content
-                    ({content, excerpt} = convertToHtml(srcBody, converter));
+                    ({content, excerpt} = runMarkupConverter(srcBody, converter));
 
                     //todo: check date
 
@@ -147,6 +150,7 @@ function firstParagraph(html) {
     let [, paragraph] = /<p>(.*)?<\/p>/.exec(html);
     return paragraph.replace(/<(.|\n)*?>/g, '');
 }
+
 /*
 * Takes a path (and a working dir)
 * returns an object with:
@@ -168,7 +172,7 @@ function parsePath(path, cwd) {
     }
 }
 
-function convertToHtml(source, converter) {
+function runMarkupConverter(source, converter) {
     let content = converter(source),
         excerpt;
 
@@ -181,4 +185,38 @@ function convertToHtml(source, converter) {
     }
 
     return {content, excerpt};
+}
+
+function runFileReader(path, reader, {encoding}) {
+    let raw, parsed;
+
+    try {
+        raw = fs.readFileSync(path, {encoding});
+    } catch (e) {
+        throw Error(`Reading file failed: ${e.message}`);
+    }
+
+    parsed = reader(raw);
+
+    if (!parsed.meta) { throw Error (`No metadata in file ${path}`); }
+    if (!parsed.body) { throw Error (`No text in file ${path}`); }
+
+    return parsed;
+}
+
+function readTextWithYfm(path, {encoding = 'UTF-8'}) {
+    let content, meta, body;
+
+    try {
+        content = fs.readFileSync(path, {encoding});
+    } catch (e) {
+        throw Error(`Reading file failed: ${e.message}`);
+    }
+
+    ({attributes: meta, body} = fm(content));
+
+    if (!meta) { throw Error (`No metadata in file ${path}`); }
+    if (!body) { throw Error (`No text in file ${path}`); }
+
+    return {meta, body};
 }
