@@ -1,6 +1,7 @@
 # V0.1.0
 - [ ] PAGES
-    - [ ] constructor/fabric
+    - [ ] constructor
+    - [ ] abstract data setter
     - [ ] fromSource
     - no validation
 - [ ] TEMPLATES

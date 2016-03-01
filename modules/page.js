@@ -76,23 +76,36 @@ function PageConstructorFabric() {
     }
 
     Object.defineProperties(PageConstructor.prototype, {
+        setProperties: {
+            enumerable: true,
+            value: (data = {}) => {
+                data.keys.forEach((val, key) => {
+                    this[key] = val;    // fixme: use defineProperty?
+                });
+            }
+        },
         fromSourceSync: {
+            enumerable: true,
             value:
             (   path,
                 {   /* here be options */
-                    converter = plainTextToHtml,
+                    contentReader = raw => {let {attributes: meta, body} = fm(raw); return {meta, body};},
                     cwd = process.cwd(),
                     encoding = 'UTF-8',
                     extensions = '*',
-                    reader = raw => {let {attributes: meta, body} = fm(raw); return {meta, body};}
+                    markupConverter = plainTextToHtml,
+                    metaConverters: {
+                        date = d => new Date(d),
+                        published = p => p === undefined || p,
+                        tags = t => ( t && t.split(/(,|\s)+/g) ) || [],
+                        categories = c => c && (c && c.split(/(,|\s)+/g)) || []
+                    }
                 }
             ) => {
                 try {
                     let {dirs, ext, name, rel} = parsePath(path, cwd),
-                        {meta, body: srcBody} = runFileReader(path, reader, {encoding}),
+                        {meta, body: srcBody} = runFileReader(path, contentReader, {encoding}),
                         content, excerpt;
-
-
 
                     if (!meta.title || !meta.date || !srcBody) {
                         throw Error(`A page has to have at least a title, date and some content.
@@ -100,16 +113,14 @@ function PageConstructorFabric() {
                     }
 
                     // convert content
-                    ({content, excerpt} = runMarkupConverter(srcBody, converter));
-
-                    //todo: check date
+                    ({content, excerpt} = runMarkupConverter(srcBody, markupConverter));
 
                     this.content = content;
-                    this.date = new Date(meta.date);
                     this.excerpt = excerpt;
-                    this.published = meta.published === undefined || meta.published;
-                    this.tags = ( meta.tags && meta.tags.split(/(,|\s)+/g) ) || []; //todo: maybe allow spaces in tags?
-                    this.title = meta.title;
+
+                    // todo: create and run metaFromPath
+                    // todo: `run metaConverters
+
                     // this.url should probably set when we call page.render()
 
                     /* todo: Categories (Jekyll: /work/code/... -> ['work', 'code']. Should we need more flexibility?) */
