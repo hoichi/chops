@@ -1,14 +1,24 @@
 # V0.1.0
 - [ ] PAGES
-    - [ ] constructor
-    - [ ] abstract data setter
-    - [ ] fromSource
+    - [x] constructor
+    - [x] abstract data setter
+    - [x] fromSource
     - no validation
+    - [x] export
+        we should export something like Page()
+        - [ ] export pure functions
+    - [ ] tests
+        - [ ] constructor
+        - [ ] setProperties
+        - [ ] fromSourceSync
 - [ ] TEMPLATES
     - [ ] template compilation cb
     - [ ] page rendering cb
 - [ ] COLLECTIONS
 - [ ] WRITE SHIT OUT
+- [ ] GLOBAL MODULE
+    - [ ] import submodules
+    - [ ] export stuff (try one thing for starters)
     
 
 # PAGE

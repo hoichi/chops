@@ -19,13 +19,13 @@ const fm = require('front-matter'),
  page.excerpt
  The un-rendered excerpt of the Page.
 
- page.url
+ todo: page.url
  The URL of the Post without the domain, but with a leading slash, e.g. /2008/12/14/my-post.html
 
  page.date
  The Date assigned to the Post. This can be overridden in a Post’s front matter by specifying a new date/time in the format YYYY-MM-DD HH:MM:SS (assuming UTC), or YYYY-MM-DD HH:MM:SS +/-TTTT (to specify a time zone using an offset from UTC. e.g. 2008-12-14 10:30:00 +0900).
 
- page.id
+ todo: page.id
  An identifier unique to the Post (useful in RSS feeds). e.g. /2008/12/14/my-post
 
  page.categories
@@ -34,7 +34,7 @@ const fm = require('front-matter'),
  page.tags
  The list of tags to which this post belongs. These can be specified in the YAML Front Matter.
 
- page.path
+ todo: page.path
  The path to the raw post or page. Example usage: Linking back to the page or post’s source on GitHub. This can be overridden in the YAML Front Matter.
 
  page.next
@@ -44,22 +44,6 @@ const fm = require('front-matter'),
 
  */
 
-/*
- function drawES6Chart({size = 'big', cords = { x: 0, y: 0 }, radius = 25} = {}) {
- console.log(size, cords, radius);
- // do some chart drawing
- }
-
- // In Firefox, default values for destructuring assignments are not yet implemented (as described below).
- // The workaround is to write the parameters in the following way:
- // ({size: size = 'big', cords: cords = { x: 0, y: 0 }, radius: radius = 25} = {})
-
- drawES6Chart({
- cords: { x: 18, y: 30 },
- radius: 30
- });
- */
-
 const defaultMetaConverters = {
     date: d => new Date(d),
     published: p => p === undefined || p,
@@ -67,102 +51,79 @@ const defaultMetaConverters = {
     categories: c => c && (c && c.split(/(,|\s)+/g)) || []
 };
 
-function PageConstructorFabric() {
-    function PageConstructor() {
-        if (!this instanceof PageConstructor) {
-            return new PageConstructor();
-        }
+/*
+* Page Constructor and prototype
+* */
 
-        /*  fixme:
-         Do we need a constructor separate from fromSource/fromSourceSync?
-         Sure, we do need that [new] boilerplate and all that prototype stuff.
-         But fromSource[...] is a constructor and should be a module property, pageFromSource or smth.
-         */
-
-        return this;
+function Page() {
+    if (!this instanceof Page) {
+        return new Page();
     }
 
-    Object.defineProperties(PageConstructor.prototype, {
-        setProperties: {
-            enumerable: true,
-            value: (data = {}) => {
-                Object.keys(data).forEach((val, key) => {
-                    this[key] = val;    // fixme: use defineProperty?
-                });
-            }
-        },
-        fromSourceSync: {
-            enumerable: true,
-            value: (
-                path,
-                {   /* here be options */
-                    contentReader = raw => {
-                        let {attributes: meta, body} = fm(raw);
-                        return {meta, body};
-                    },
-                    cwd = process.cwd(),
-                    encoding = 'UTF-8',
-                    extensions = '*',
-                    markupConverter = plainTextToHtml,
-                    metaConverters = {},
-                    metaFromPath = (path, pathObj) => {
-                        return {};
-                    }
-                }
-            ) => {
-                try {
-                    let pathParsed = parsePath(path, cwd),
-                        {meta, body: srcBody} = runFileReader(path, contentReader, {encoding}),
-                        content, excerpt, combinedMetaConverters;
+    return this;
+}
 
-                    if (!meta.title || !meta.date || !srcBody) {
-                        throw Error(`A page has to have at least a title, date and some content.
-                                        Looking at ya, ${path}.`);
-                    }
-
-                    // convert content
-                    ({content, excerpt} = runMarkupConverter(srcBody, markupConverter));
-
-                    combinedMetaConverters = Object.assign({}, defaultMetaConverters, metaConverters);
-
-                    Object.assign(
-                        this,
-                        {excerpt},  // it's fine to redefine the excerpt in front-matter
-                        metaFromPath(path, pathParsed), // todo: check if an object is returned
-                        runMetaConverters(meta, combinedMetaConverters),
-                        {content}   // but we're probably safer not redefining content
-                    );
-                } catch (e) {
-                    throw Error(`Failed creating a page from ${path}.\nError message runs: ‘${e.message}’`);
-                }
-
-                return this;
-            }
-        },
-        next: {
-            get: () => {/* todo: or should it be a simple value set by .collect()? */
-            }
+Object.defineProperties(Page.prototype, {
+    setProperties: {
+        enumerable: true,
+        value: (data = {}) => {
+            Object.keys(data).forEach((val, key) => {
+                this[key] = val;    // fixme: use defineProperty?
+            });
         }
-    });
+    },
+    fromSourceSync: {
+        enumerable: true,
+        value: (
+            path,
+            {   /* here be options */
+                sourceContentParser = parseTextWithYfm,
+                cwd = process.cwd(),
+                encoding = 'UTF-8',
+                extensions = '*',
+                markupConverter = plainTextToHtml,
+                metaConverters = {},
+                metaFromPath = (path, pathObj) => {
+                    return {};
+                }
+            }
+        ) => {
+            try {
+                let pathParsed = parsePath(path, cwd),
+                    {meta, body: srcBody} = runFileReader(path, sourceContentParser, {encoding}),
+                    content, excerpt, combinedMetaConverters;
 
-    return PageConstructor;
-}
+                if (!meta.title || !meta.date || !srcBody) {
+                    throw Error(`A page has to have at least a title, date and some content.
+                                    Looking at ya, ${path}.`);
+                }
 
-function plainTextToHtml(s) {
-    let paragraphs = s.split(/(\s*\n){2,}/g);
-    if (!paragraphs.length) {
-        throw new Error(`You could’t even pass ONE paragraph? Wow. Just... wow.`);
+                // convert content
+                ({content, excerpt} = runMarkupConverter(srcBody, markupConverter));
+
+                combinedMetaConverters = Object.assign({}, defaultMetaConverters, metaConverters);
+
+                Object.assign(
+                    this,
+                    {excerpt},  // it's fine to redefine the excerpt in front-matter
+                    metaFromPath(path, pathParsed), // todo: check if an object is returned
+                    runMetaConverters(meta, combinedMetaConverters),
+                    {content}   // but we're probably safer not redefining content
+                );
+            } catch (e) {
+                throw Error(`Failed creating a page from ${path}.\nError message runs: ‘${e.message}’`);
+            }
+
+            return this;
+        }
+    },
+    next: {
+        get: () => {/* todo: or should it be a simple value set by .collect()? */
+        }
     }
+});
 
-    let paragrAdder = (article, paragraph) => article + `<p>${paragraph.replace(/\s*\n/g, '<br>\n')}</p>\n\n`;
-
-    return {
-        content: paragraphs.reduce(paragrAdder, ``),
-        excerpt: paragrAdder(``, paragraphs[0])
-    };
-}
-
-function firstParagraph(html) {
+function firstParagraphOfHtml(html) {
     let [, paragraph] = /<p>(.*)?<\/p>/.exec(html);
     return paragraph.replace(/<(.|\n)*?>/g, '');
 }
@@ -188,19 +149,39 @@ function parsePath(path, cwd) {
     }
 }
 
-function runMarkupConverter(source, converter) {
-    let content = converter(source),
-        excerpt;
+function parseTextWithYfm(path, {encoding = 'UTF-8'}) {
+    let content, meta, body;
 
-    if (content && content.content) {
-        ({content, excerpt} = content);
-    } else if (typeof content === `string`) {
-        excerpt = firstParagraph(content);
-    } else {
-        throw Error(`Wrong page content after convertions. Page source is ${path}, if it helps.`);
+    try {
+        content = fs.readFileSync(path, {encoding});
+    } catch (e) {
+        throw Error(`Reading file failed: ${e.message}`);
     }
 
-    return {content, excerpt};
+    ({attributes: meta, body} = fm(content));
+
+    if (!meta) {
+        throw Error(`No metadata in file ${path}`);
+    }
+    if (!body) {
+        throw Error(`No text in file ${path}`);
+    }
+
+    return {meta, body};
+}
+
+function plainTextToHtml(s) {
+    let paragraphs = s.split(/(\s*\n){2,}/g);
+    if (!paragraphs.length) {
+        throw new Error(`You could’t even pass ONE paragraph? Wow. Just... wow.`);
+    }
+
+    let paragrAdder = (article, paragraph) => article + `<p>${paragraph.replace(/\s*\n/g, '<br>\n')}</p>\n\n`;
+
+    return {
+        content: paragraphs.reduce(paragrAdder, ``),
+        excerpt: paragrAdder(``, paragraphs[0])
+    };
 }
 
 function runFileReader(path, reader, {encoding}) {
@@ -224,25 +205,19 @@ function runFileReader(path, reader, {encoding}) {
     return parsed;
 }
 
-function readTextWithYfm(path, {encoding = 'UTF-8'}) {
-    let content, meta, body;
+function runMarkupConverter(source, converter) {
+    let content = converter(source),
+        excerpt;
 
-    try {
-        content = fs.readFileSync(path, {encoding});
-    } catch (e) {
-        throw Error(`Reading file failed: ${e.message}`);
+    if (content && content.content) {
+        ({content, excerpt} = content);
+    } else if (typeof content === `string`) {
+        excerpt = firstParagraphOfHtml(content);
+    } else {
+        throw Error(`Wrong page content after convertions. Page source is ${path}, if it helps.`);
     }
 
-    ({attributes: meta, body} = fm(content));
-
-    if (!meta) {
-        throw Error(`No metadata in file ${path}`);
-    }
-    if (!body) {
-        throw Error(`No text in file ${path}`);
-    }
-
-    return {meta, body};
+    return {content, excerpt};
 }
 
 function runMetaConverters(meta, converters, includeUnconverted = true) {
@@ -258,4 +233,23 @@ function runMetaConverters(meta, converters, includeUnconverted = true) {
     });
 
     return result;
+}
+
+let innerFunctions = {
+    firstParagraphOfHtml,
+    parsePath,
+    parseTextWithYfm,
+    plainTextToHtml,
+    runFileReader,
+    runMarkupConverter,
+    runMetaConverters,
+};
+
+module.exports = {
+    Page,
+    innerFunctions
+};
+export {
+    Page,
+    innerFunctions
 }
