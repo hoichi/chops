@@ -11,13 +11,24 @@ We do retrieve meta, but we don't know what to do with it.
     - a page doesn't know its `url` until it's written (and we probably should allow using html without writing). and it doesn't know its `next` and `previous` until it's _collected_. so... object composition? callbacks again? or it just plain cannot be overly agnostic of them collections, site etc.
         - btw, `next` and `previous` easily default to `null` or smth. that said, should we give public methods to set it? or maybe these properties should have getters and setters, after all. their values in console.info() are not that important
     - that said, it would be nice to be able to use pages module per se, without collector
+    
+    ### Page module usage
+    ```js
+    let pages = require('silkworm/pages');
+    pages.setConfig({/*...*/}); // reuses the same (reused) fabric
+    pages.newConfig({/*...*/}); // returns a new fabric with different settings
+
+    // should setConfig be lazy? so if we use only newConfigs, initial fabric doesn't go unused
+    // but then `pages.Page()` should create a fabric as well
+    ```
+    
 
 - COLLECTIONS
     - add pages to collections
     - sorting is optional (and configurable)
     ```js
-        silkworm.PageFromSource(file, site, {})
-            .collect(/*...*/);  // how does lodash combine chained calls with modulatiry?
+        silkworm.pageFromSource(file, site, {})
+            .collect(/*...*/);  // how does lodash combine chained calls with modularity?
         // or
         page = silkworm.PageFromSource(/**/);
         site.collections.blog.addPage(page, {sorted: {by: 'date', desc: true}});

@@ -1,11 +1,11 @@
 'use strict';
 
-const fm = require('front-matter'),
-    fs = require('fs'),
-    _ = require('lodash'),    // todo: https://medium.com/making-internets/why-using-chain-is-a-mistake-9bc1f80d51ba#.azak8kbwc
-    mPath = require('path'),
-    u = require('./utils.js'),
-    url = require('url');
+const   fm = require('front-matter'),
+        fs = require('fs'),
+        _ = require('lodash'),    // todo: https://medium.com/making-internets/why-using-chain-is-a-mistake-9bc1f80d51ba#.azak8kbwc
+        mPath = require('path'),
+        u = require('./utils.js'),
+        url = require('url');
 
 /*
  Jekyll vars
@@ -52,75 +52,99 @@ const defaultMetaConverters = {
 };
 
 /*
-* Page Constructor and prototype
+* The module should have these methods:
+* - setConfig()
+* - newConfig()
+* - Page()
+*
+* Or should the fabric be the fabric: recieve some config and return a constructor?
 * */
 
-function Page() {
-    if (!this instanceof Page) {
-        return new Page();
+
+function PageFabric({   /* here be options */
+        sourceContentParser = parseTextWithYfm,
+        cwd = process.cwd(),
+        encoding = 'UTF-8',
+        extensions = '*',
+        markupConverter = plainTextToHtml,
+        metaConverters = {},
+        metaFromPath = (path, pathObj) => { return {}; }
+    }) {
+    /*
+     * Page Constructor and prototype
+     * */
+
+    function Page(cfg) {
+        if (!this instanceof Page) {
+            return new Page();
+        }
+
+        return this;
     }
 
-    return this;
+    Object.defineProperties(Page.prototype, {
+        setProperties: {
+            enumerable: true,
+            value: (data = {}) => {
+                Object.keys(data).forEach((val, key) => {
+                    this[key] = val;    // fixme: use defineProperty?
+                });
+            }
+        },
+        fromSourceSync: {
+            enumerable: true,
+            value: (path, cfg) => {
+                try {
+                    let pathParsed = parsePath(path, cwd),
+                        {meta, body: srcBody} = runFileReader(path, sourceContentParser, {encoding}),
+                        content, excerpt, combinedMetaConverters;
+
+                    if (!meta.title || !meta.date || !srcBody) {
+                        throw Error(`A page has to have at least a title, date and some content.
+                                    Looking at ya, ${path}.`);
+                    }
+
+                    // convert content
+                    ({content, excerpt} = runMarkupConverter(srcBody, markupConverter));
+
+                    combinedMetaConverters = Object.assign({}, defaultMetaConverters, metaConverters);
+
+                    Object.assign(
+                        this,
+                        {excerpt},  // it's fine to redefine the excerpt in front-matter
+                        metaFromPath(path, pathParsed), // todo: check if an object is returned
+                        runMetaConverters(meta, combinedMetaConverters),
+                        {content}   // but we're probably safer not redefining content
+                    );
+                } catch (e) {
+                    throw Error(`Failed creating a page from ${path}.\nError message runs: ‘${e.message}’`);
+                }
+
+                return this;
+            }
+        },
+        next: {
+            get: () => {/* todo: or should it be a simple value set by .collect()? */
+            }
+        },
+    });
 }
 
 Object.defineProperties(Page.prototype, {
-    setProperties: {
+    setConfig: {
         enumerable: true,
-        value: (data = {}) => {
-            Object.keys(data).forEach((val, key) => {
-                this[key] = val;    // fixme: use defineProperty?
-            });
-        }
+        value: cfg => {
+            // lazy init
+            // set da config
+        },
     },
-    fromSourceSync: {
+    newConfig: {
         enumerable: true,
-        value: (
-            path,
-            {   /* here be options */
-                sourceContentParser = parseTextWithYfm,
-                cwd = process.cwd(),
-                encoding = 'UTF-8',
-                extensions = '*',
-                markupConverter = plainTextToHtml,
-                metaConverters = {},
-                metaFromPath = (path, pathObj) => {
-                    return {};
-                }
-            }
-        ) => {
-            try {
-                let pathParsed = parsePath(path, cwd),
-                    {meta, body: srcBody} = runFileReader(path, sourceContentParser, {encoding}),
-                    content, excerpt, combinedMetaConverters;
-
-                if (!meta.title || !meta.date || !srcBody) {
-                    throw Error(`A page has to have at least a title, date and some content.
-                                    Looking at ya, ${path}.`);
-                }
-
-                // convert content
-                ({content, excerpt} = runMarkupConverter(srcBody, markupConverter));
-
-                combinedMetaConverters = Object.assign({}, defaultMetaConverters, metaConverters);
-
-                Object.assign(
-                    this,
-                    {excerpt},  // it's fine to redefine the excerpt in front-matter
-                    metaFromPath(path, pathParsed), // todo: check if an object is returned
-                    runMetaConverters(meta, combinedMetaConverters),
-                    {content}   // but we're probably safer not redefining content
-                );
-            } catch (e) {
-                throw Error(`Failed creating a page from ${path}.\nError message runs: ‘${e.message}’`);
-            }
-
-            return this;
-        }
+        value: cfg => {
+            // explicit init
+            // set da config
+        },
     },
-    next: {
-        get: () => {/* todo: or should it be a simple value set by .collect()? */
-        }
-    }
 });
 
 function firstParagraphOfHtml(html) {
@@ -235,7 +259,7 @@ function runMetaConverters(meta, converters, includeUnconverted = true) {
     return result;
 }
 
-let innerFunctions = {
+let _innerFunctions = {  // you know, for unit tests
     firstParagraphOfHtml,
     parsePath,
     parseTextWithYfm,
@@ -246,10 +270,10 @@ let innerFunctions = {
 };
 
 module.exports = {
-    Page,
-    innerFunctions
+    Page: PageFabric(),
+    _innerFunctions
 };
 export {
     Page,
-    innerFunctions
+    _innerFunctions
 }

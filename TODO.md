@@ -6,7 +6,9 @@
     - no validation
     - [x] export
         we should export something like Page()
-        - [ ] export pure functions
+        - [x] export pure functions
+    - [ ] configure common settings once, override what's necessary
+
     - [ ] tests
         - [ ] constructor
         - [ ] setProperties
