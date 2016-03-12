@@ -1,5 +1,7 @@
 'use strict';
 
+import merge from 'lodash/fp/merge';
+
 const   fm = require('front-matter'),
         fs = require('fs'),
         _ = require('lodash'),    // todo: https://medium.com/making-internets/why-using-chain-is-a-mistake-9bc1f80d51ba#.azak8kbwc
@@ -11,44 +13,32 @@ const   fm = require('front-matter'),
  Jekyll vars
  ===========
 
- page.content
- The content of the Page, rendered or un-rendered depending upon what Liquid is being processed and what page is.
-
- page.title
-
- page.excerpt
- The un-rendered excerpt of the Page.
-
  todo: page.url
  The URL of the Post without the domain, but with a leading slash, e.g. /2008/12/14/my-post.html
-
- page.date
- The Date assigned to the Post. This can be overridden in a Post’s front matter by specifying a new date/time in the format YYYY-MM-DD HH:MM:SS (assuming UTC), or YYYY-MM-DD HH:MM:SS +/-TTTT (to specify a time zone using an offset from UTC. e.g. 2008-12-14 10:30:00 +0900).
 
  todo: page.id
  An identifier unique to the Post (useful in RSS feeds). e.g. /2008/12/14/my-post
 
- page.categories
+todo: page.categories
  The list of categories to which this post belongs. Categories are derived from the directory structure above the _posts directory. For example, a post at /work/code/_posts/2008-12-24-closures.md would have this field set to ['work', 'code']. These can also be specified in the YAML Front Matter.
-
- page.tags
- The list of tags to which this post belongs. These can be specified in the YAML Front Matter.
 
  todo: page.path
  The path to the raw post or page. Example usage: Linking back to the page or post’s source on GitHub. This can be overridden in the YAML Front Matter.
-
- page.next
- The next post relative to the position of the current post in site.posts. Returns nil for the last entry.
-
- page.previous
-
  */
 
-const defaultMetaConverters = {
-    date: d => new Date(d),
-    published: p => p === undefined || p,
-    tags: t => ( t && t.split(/(,|\s)+/g) ) || [],
-    categories: c => c && (c && c.split(/(,|\s)+/g)) || []
+let cfg = {
+    sourceContentParser: parseTextWithYfm,
+    cwd: process.cwd(),
+    encoding: 'UTF-8',
+    //extensions: '*',
+    markupConverter: plainTextToHtml,
+    metaConverters: {
+        date: d => new Date(d),
+        published: p => p === undefined || p,
+        tags: t => ( t && t.split(/(,|\s)+/g) ) || [],
+        categories: c => c && (c && c.split(/(,|\s)+/g)) || []
+    },
+    metaFromPath: (path, pathObj) => { return {};},
 };
 
 /*
@@ -61,28 +51,23 @@ const defaultMetaConverters = {
 * */
 
 
-function PageFabric({   /* here be options */
-        sourceContentParser = parseTextWithYfm,
-        cwd = process.cwd(),
-        encoding = 'UTF-8',
-        extensions = '*',
-        markupConverter = plainTextToHtml,
-        metaConverters = {},
-        metaFromPath = (path, pathObj) => { return {}; }
-    }) {
+function PageFabric() {
     /*
      * Page Constructor and prototype
      * */
 
     function Page(cfg) {
         if (!this instanceof Page) {
-            return new Page();
+            return new Page();``
         }
 
         return this;
     }
 
     Object.defineProperties(Page.prototype, {
+        /*
+        * Just setting a bunch of arbitrary page properties manually.
+        * */
         setProperties: {
             enumerable: true,
             value: (data = {}) => {
@@ -93,11 +78,11 @@ function PageFabric({   /* here be options */
         },
         fromSourceSync: {
             enumerable: true,
-            value: (path, cfg) => {
+            value: (path/*, cfg*/) => {
                 try {
-                    let pathParsed = parsePath(path, cwd),
-                        {meta, body: srcBody} = runFileReader(path, sourceContentParser, {encoding}),
-                        content, excerpt, combinedMetaConverters;
+                    let pathParsed = parsePath(path, cfg.cwd),
+                        {meta, body: srcBody} = runFileReader(path, cfg.sourceContentParser, {encoding: cfg.encoding}),
+                        content, excerpt;
 
                     if (!meta.title || !meta.date || !srcBody) {
                         throw Error(`A page has to have at least a title, date and some content.
@@ -105,20 +90,20 @@ function PageFabric({   /* here be options */
                     }
 
                     // convert content
-                    ({content, excerpt} = runMarkupConverter(srcBody, markupConverter));
-
-                    combinedMetaConverters = Object.assign({}, defaultMetaConverters, metaConverters);
+                    ({content, excerpt} = runMarkupConverter(srcBody, cfg.markupConverter));
 
                     Object.assign(
                         this,
                         {excerpt},  // it's fine to redefine the excerpt in front-matter
-                        metaFromPath(path, pathParsed), // todo: check if an object is returned
-                        runMetaConverters(meta, combinedMetaConverters),
+                        cfg.metaFromPath(path, pathParsed), // todo: check if an object is returned
+                        runMetaConverters(meta, cfg.metaConverters),
                         {content}   // but we're probably safer not redefining content
                     );
                 } catch (e) {
                     throw Error(`Failed creating a page from ${path}.\nError message runs: ‘${e.message}’`);
                 }
+
+                // todo: use setProperties;
 
                 return this;
             }
@@ -130,21 +115,11 @@ function PageFabric({   /* here be options */
     });
 }
 
-Object.defineProperties(Page.prototype, {
+Object.defineProperties(PageFabric.prototype, {
     setConfig: {
         enumerable: true,
-        value: cfg => {
-            // lazy init
-            // set da config
-        },
-    },
-    newConfig: {
-        enumerable: true,
-        value: cfg => {
-            // explicit init
-            // set da config
-        },
-    },
+        value: newCfg => { merge(cfg, newCfg); return this; },
+    }
 });
 
 function firstParagraphOfHtml(html) {
@@ -269,11 +244,9 @@ let _innerFunctions = {  // you know, for unit tests
     runMetaConverters,
 };
 
-module.exports = {
-    Page: PageFabric(),
-    _innerFunctions
-};
+module.exports = PageFabric;
+
 export {
-    Page,
+    PageFabric as default,
     _innerFunctions
 }

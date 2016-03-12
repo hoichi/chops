@@ -7,16 +7,25 @@
     - [x] export
         we should export something like Page()
         - [x] export pure functions
-    - [ ] configure common settings once, override what's necessary
-
+    - [x] configure common settings once, override what's necessary
     - [ ] tests
+        - [ ] functions
         - [ ] constructor
+        - [ ] setConfig
         - [ ] setProperties
         - [ ] fromSourceSync
-- [ ] TEMPLATES
-    - [ ] template compilation cb
-    - [ ] page rendering cb
+    - [ ] make it work with h.io.
+    - [ ] jekyll compatibility (.id etc.)
 - [ ] COLLECTIONS
+    - [ ] add
+    - [ ] fill prev/next
+    - [ ] feed them to templates
+- [ ] TEMPLATES
+    - [ ] compile
+        - [ ] template compilation cb
+    - [ ] render
+        - [ ] page rendering cb
+    - [ ] feed data to templates
 - [ ] WRITE SHIT OUT
 - [ ] GLOBAL MODULE
     - [ ] import submodules
