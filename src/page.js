@@ -123,7 +123,7 @@ Object.defineProperties(PageFabric.prototype, {
 });
 
 function firstParagraphOfHtml(html) {
-    let [, paragraph] = /<p>(.*)?<\/p>/.exec(html);
+    let [, paragraph] = /<p>(.*?)<\/p>/.exec(html);
     return paragraph.replace(/<(.|\n)*?>/g, '');
 }
 
@@ -243,8 +243,6 @@ let _innerFunctions = {  // you know, for unit tests
     runMarkupConverter,
     runMetaConverters,
 };
-
-module.exports = PageFabric;
 
 export {
     PageFabric as default,
