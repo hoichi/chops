@@ -9,6 +9,9 @@
         - [x] export pure functions
     - [x] configure common settings once, override what's necessary
     - [ ] tests
+        - [x] setup AVA
+        - [x] setup Babel
+        - [x] compile, then run
         - [ ] functions
         - [ ] constructor
         - [ ] setConfig
