@@ -58,7 +58,7 @@ function PageFabric() {
 
     function Page(cfg) {
         if (!this instanceof Page) {
-            return new Page();``
+            return new Page();
         }
 
         return this;
@@ -123,8 +123,12 @@ Object.defineProperties(PageFabric.prototype, {
 });
 
 function firstParagraphOfHtml(html) {
-    let [, paragraph] = /<p>(.*?)<\/p>/.exec(html);
-    return paragraph.replace(/<(.|\n)*?>/g, '');
+    if (typeof html !== 'string') { html =''; }
+
+    let paragraphs = /<p>(.*?)<\/p>/.exec(html);
+    if(!paragraphs) { throw Error(`Not a single paragraph found, are you kidding me?`); }
+
+    return paragraphs[1].replace(/<(.|\n)*?>/g, '');
 }
 
 /*
@@ -137,7 +141,7 @@ function parsePath(path, cwd) {
 // todo: should we move it to Utils?
 // todo: check if file actually exists? or is senseless if we get it from Glob or smth? it kinda should fail gracefuly if it't removed by the time we get here
     let {root, dir, base, ext, name} = mPath.parse(mPath.resolve(path)),
-        rel = path.relative(cwd, dir),
+        rel = mPath.relative(cwd, dir),
         dirs = rel.split(mPath.sep);
 
     return {
@@ -148,7 +152,7 @@ function parsePath(path, cwd) {
     }
 }
 
-function parseTextWithYfm(path, {encoding = 'UTF-8'}) {
+function parseTextWithYfm(path, {encoding = 'UTF-8'} = {encoding: 'UTF-8'}) {
     let content, meta, body;
 
     try {

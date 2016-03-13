@@ -6,8 +6,7 @@
   "scripts": {
     "babel": "babel src -d lib",
 
-    "test": "ava",
-    "pretest": "npm run babel"
+    "test": "ava"
   },
   "repository": {
     "type": "git",
@@ -39,6 +38,9 @@
     "files": [
       "test/*.js",
       "!test/t_utils.js"
+    ],
+    "require": [
+      "babel-register"
     ]
   }
 }
