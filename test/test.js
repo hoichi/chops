@@ -25,7 +25,7 @@ test('Page->converters', t => {
             { dirs: [ 'dev', 'hoio' ], ext: '.json', name: 'package', rel: path.join('dev','hoio') });
     /* todo: try to break it */
 
-    //parseTextWithYfm(path, {encoding = 'UTF-8'})
+    // parseTextWithYfm(path, {encoding = 'UTF-8'})
     t.same( _if.parseTextWithYfm('files/content1.md'),
             { meta: { title: 'Hello World!'
                     , date: new Date('2016-03-13')
@@ -34,4 +34,17 @@ test('Page->converters', t => {
             , body: 'Mama, why did you raise me this way?'
             }
     );
+
+    // plainTextToHtml(s: string): string
+    t.is(   _if.plainTextToHtml('First!\n\nSecond!'),
+            '<p>First!</p>\n\n<p>Second!</p>\n\n',
+            'The simplest case');
+    t.is(   _if.plainTextToHtml('First!\n\nSecond!\nSecond and a half!'),
+            '<p>First!</p>\n\n<p>Second!<br>\nSecond and a half!</p>\n\n',
+            'Soft break');
+    t.is(   _if.plainTextToHtml('First!\r\n\r\nSecond!\r\nSecond and a half!'),
+            '<p>First!</p>\n\n<p>Second!<br>\nSecond and a half!</p>\n\n',
+            'The return of the carriage');
+    t.throws( () => _if.plainTextToHtml(8));
+    t.throws( () => _if.plainTextToHtml(''));
 });

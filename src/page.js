@@ -162,6 +162,7 @@ function parseTextWithYfm(path, {encoding = 'UTF-8'} = {encoding: 'UTF-8'}) {
     }
 
     ({attributes: meta, body} = fm(content));
+    // todo: trim leading newlines
 
     if (!meta) {
         throw Error(`No metadata in file ${path}`);
@@ -174,17 +175,15 @@ function parseTextWithYfm(path, {encoding = 'UTF-8'} = {encoding: 'UTF-8'}) {
 }
 
 function plainTextToHtml(s) {
-    let paragraphs = s.split(/(\s*\n){2,}/g);
-    if (!paragraphs.length) {
+    let paragraphs = s.split(/(?:\s*\n){2,}/g);
+    if (!paragraphs.length || !paragraphs[0]) {
         throw new Error(`You could’t even pass ONE paragraph? Wow. Just... wow.`);
     }
 
-    let paragrAdder = (article, paragraph) => article + `<p>${paragraph.replace(/\s*\n/g, '<br>\n')}</p>\n\n`;
-
-    return {
-        content: paragraphs.reduce(paragrAdder, ``),
-        excerpt: paragrAdder(``, paragraphs[0])
-    };
+    return paragraphs.reduce(
+        (article, paragraph) => article + `<p>${paragraph.replace(/\s*\n/g, '<br>\n')}</p>\n\n`,
+        ``
+    );
 }
 
 function runFileReader(path, reader, {encoding}) {
