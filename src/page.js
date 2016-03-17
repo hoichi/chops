@@ -152,16 +152,8 @@ function parsePath(path, cwd) {
     }
 }
 
-function parseTextWithYfm(path, {encoding = 'UTF-8'} = {encoding: 'UTF-8'}) {
-    let content, meta, body;
-
-    try {
-        content = fs.readFileSync(path, {encoding});
-    } catch (e) {
-        throw Error(`Reading file failed: ${e.message}`);
-    }
-
-    ({attributes: meta, body} = fm(content));
+function parseTextWithYfm(content) {
+    let {attributes: meta, body} = fm(content);
     // todo: trim leading newlines
 
     if (!meta) {
@@ -186,7 +178,7 @@ function plainTextToHtml(s) {
     );
 }
 
-function runFileReader(path, reader, {encoding}) {
+function runFileReader(path, reader, {encoding = 'UTF-8'}) {
     let raw, parsed;
 
     try {

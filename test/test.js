@@ -26,14 +26,24 @@ test('Page->converters', t => {
     /* todo: try to break it */
 
     // parseTextWithYfm(path, {encoding = 'UTF-8'})
-    t.same( _if.parseTextWithYfm('files/content1.md'),
-            { meta: { title: 'Hello World!'
-                    , date: new Date('2016-03-13')
-                    , tags: 'tagged, tagadelic'
-                    }
-            , body: 'Mama, why did you raise me this way?'
-            }
-    );
+    /* todo: trim trailing spaces in multiline strings
+     * see https://gist.github.com/zenparsing/5dffde82d9acef19e43c, for one
+     * */
+    t.same  ( _if.parseTextWithYfm(
+`---
+title: Hello World!
+date: 2016-03-13
+tags: tagged, tagadelic
+---
+Mama, why did you raise me this way?`
+                )
+            ,   { meta: { title: 'Hello World!'
+                        , date: new Date('2016-03-13')
+                        , tags: 'tagged, tagadelic'
+                        }
+                , body: 'Mama, why did you raise me this way?'
+                }
+            );
 
     // plainTextToHtml(s: string): string
     t.is(   _if.plainTextToHtml('First!\n\nSecond!'),
@@ -47,4 +57,27 @@ test('Page->converters', t => {
             'The return of the carriage');
     t.throws( () => _if.plainTextToHtml(8));
     t.throws( () => _if.plainTextToHtml(''));
+
+    // runFileReader(path: string, reader(string):string, {encoding})
+    t.same( _if.runFileReader('files/content1.md', s => {return {meta: {}, body: '-'}}, 'UTF-8'),
+        { meta: {}
+        , body: '-'
+        }
+    );
+    t.throws(() => {
+        _if.runFileReader('files/content1.md', s => { return {meta: {}, body: ''} })
+    });
+    // look ma, an integration test!
+    t.same( _if.runFileReader('files/content1.md', _if.parseTextWithYfm, 'UTF-8'),
+        { meta: { title: 'Hello World!'
+                , date: new Date('2016-03-13')
+                , tags: 'tagged, tagadelic'
+                }
+        , body: 'Mama, why did you raise me this way?'
+        }
+    );
+
+    // runMarkupConverter(source: string, converter(string)): {markup: string, excerpt: string}
+    // runMetaConverters(meta: Object, converters[](), includeUnconverted = true)): []
+
 });
