@@ -172,10 +172,10 @@ function plainTextToHtml(s) {
         throw new Error(`You could’t even pass ONE paragraph? Wow. Just... wow.`);
     }
 
-    return paragraphs.reduce(
-        (article, paragraph) => article + `<p>${paragraph.replace(/\s*\n/g, '<br>\n')}</p>\n\n`,
-        ``
-    );
+    return  paragraphs
+                .map(p => `<p>${p.replace(/\s*\n/g, '<br>\n')}</p>`)
+                .join(`\n\n`)
+            ;
 }
 
 function runFileReader(path, reader, {encoding = 'UTF-8'}) {
@@ -206,9 +206,9 @@ function runMarkupConverter(source, converter) {
     if (content && content.content) {
         ({content, excerpt} = content);
     } else if (typeof content === `string`) {
-        excerpt = firstParagraphOfHtml(content);
+        excerpt = firstParagraphOfHtml(content);    // todo: what if there's no html?
     } else {
-        throw Error(`Wrong page content after convertions. Page source is ${path}, if it helps.`);
+        throw Error(`Wrong page content after markup conversion.`);
     }
 
     return {content, excerpt};
@@ -216,9 +216,12 @@ function runMarkupConverter(source, converter) {
 
 function runMetaConverters(meta, converters, includeUnconverted = true) {
     let result = {},
-        conv;
+        conv,
+        val;
 
-    Object.keys(meta).forEach((val, key) => {
+    Object.keys(meta).forEach(key => {
+        val = meta[key];
+
         if (conv = converters[key]) {
             result[key] = conv(val);
         } else if (includeUnconverted) {

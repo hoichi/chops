@@ -47,13 +47,13 @@ Mama, why did you raise me this way?`
 
     // plainTextToHtml(s: string): string
     t.is(   _if.plainTextToHtml('First!\n\nSecond!'),
-            '<p>First!</p>\n\n<p>Second!</p>\n\n',
+            '<p>First!</p>\n\n<p>Second!</p>',
             'The simplest case');
     t.is(   _if.plainTextToHtml('First!\n\nSecond!\nSecond and a half!'),
-            '<p>First!</p>\n\n<p>Second!<br>\nSecond and a half!</p>\n\n',
+            '<p>First!</p>\n\n<p>Second!<br>\nSecond and a half!</p>',
             'Soft break');
     t.is(   _if.plainTextToHtml('First!\r\n\r\nSecond!\r\nSecond and a half!'),
-            '<p>First!</p>\n\n<p>Second!<br>\nSecond and a half!</p>\n\n',
+            '<p>First!</p>\n\n<p>Second!<br>\nSecond and a half!</p>',
             'The return of the carriage');
     t.throws( () => _if.plainTextToHtml(8));
     t.throws( () => _if.plainTextToHtml(''));
@@ -78,6 +78,20 @@ Mama, why did you raise me this way?`
     );
 
     // runMarkupConverter(source: string, converter(string)): {markup: string, excerpt: string}
-    // runMetaConverters(meta: Object, converters[](), includeUnconverted = true)): []
+    t.same(_if.runMarkupConverter('', s => '<p>123</p>'), {content: '<p>123</p>', excerpt: '123'});
+    t.same(_if.runMarkupConverter('', s => { return {content: '<p>123</p>', excerpt: '123'} }), {content: '<p>123</p>', excerpt: '123'});
+    t.throws(() => _if.runMarkupConverter('', s => 2 ));
+    t.throws(() => _if.runMarkupConverter('', []));
+    // integration
+    t.same(_if.runMarkupConverter('123', _if.plainTextToHtml), {content: '<p>123</p>', excerpt: '123'});
 
+
+    // runMetaConverters(meta: Object, converters[](), includeUnconverted = true)): []
+    t.same(_if.runMetaConverters({}, {}), {});
+    t.same(_if.runMetaConverters({num: 1, str: 'wee', arr: [1, 2, 3]}, {num: n=>-1, str: s=>s+s}, false),
+        {num: -1, str: 'weewee'}
+    );
+    t.same(_if.runMetaConverters({num: 1, str: 'wee', arr: [1, 2, 3]}, {num: n=>-1, str: s=>s+s}, true),
+        {num: -1, str: 'weewee', arr: [1, 2, 3]}
+    );
 });
