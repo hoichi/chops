@@ -6,7 +6,9 @@
   "scripts": {
     "babel": "babel src -d lib",
 
-    "test": "ava"
+    "test": "ava",
+
+    "prepublish": "~bundle them shits somehow~"
   },
   "repository": {
     "type": "git",

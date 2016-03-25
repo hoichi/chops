@@ -23,7 +23,7 @@ todo: page.categories
  The list of categories to which this post belongs. Categories are derived from the directory structure above the _posts directory. For example, a post at /work/code/_posts/2008-12-24-closures.md would have this field set to ['work', 'code']. These can also be specified in the YAML Front Matter.
 
  todo: page.path
- The path to the raw post or page. Example usage: Linking back to the page or post’s source on GitHub. This can be overridden in the YAML Front Matter.
+ The path to the raw post or page. Exampl`e usage: Linking back to the page or post’s source on GitHub. This can be overridden in the YAML Front Matter.
  */
 
 let cfg = {
@@ -45,21 +45,20 @@ let cfg = {
 * The module should have these methods:
 * - setConfig()
 * - newConfig()
-* - Page()
+* - page()
 *
 * Or should the fabric be the fabric: recieve some config and return a constructor?
 * */
 
 
 function PageFabric() {
+    if (!(this instanceof PageFabric)) { return new PageFabric(); }
     /*
-     * Page Constructor and prototype
+     * page Constructor and prototype
      * */
 
     function Page(cfg) {
-        if (!this instanceof Page) {
-            return new Page();
-        }
+        if (!(this instanceof Page)) { return new Page(); }
 
         return this;
     }
@@ -103,8 +102,6 @@ function PageFabric() {
                     throw Error(`Failed creating a page from ${path}.\nError message runs: ‘${e.message}’`);
                 }
 
-                // todo: use setProperties;
-
                 return this;
             }
         },
@@ -113,12 +110,21 @@ function PageFabric() {
             }
         },
     });
+    return this;
 }
 
 Object.defineProperties(PageFabric.prototype, {
     setConfig: {
         enumerable: true,
         value: newCfg => { merge(cfg, newCfg); return this; },
+    },
+    newPage: {
+        enumerable: true,
+        value: () => new Page()
+    },
+    fromSourceSync: {
+        enumerable: true,
+        value: path => new Page().fromSourceSync()
     }
 });
 
@@ -233,16 +239,19 @@ function runMetaConverters(meta, converters, includeUnconverted = true) {
 }
 
 let _innerFunctions = {  // you know, for unit tests
-    firstParagraphOfHtml,
-    parsePath,
-    parseTextWithYfm,
-    plainTextToHtml,
-    runFileReader,
-    runMarkupConverter,
-    runMetaConverters,
-};
+        firstParagraphOfHtml,
+        parsePath,
+        parseTextWithYfm,
+        plainTextToHtml,
+        runFileReader,
+        runMarkupConverter,
+        runMetaConverters,
+    },
+    page = PageFabric();
+
+console.log(page.setConfig);
 
 export {
-    PageFabric as default,
+    page as default,
     _innerFunctions
 }

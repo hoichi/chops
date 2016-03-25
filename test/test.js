@@ -5,10 +5,10 @@
 
 import test from 'ava';
 import path from 'path';
-import {_innerFunctions as _if} from '../src/page.js';
+import page, {_innerFunctions as _if} from '../src/page.js';
 
 
-test('Page->converters', t => {
+test('page->converters', t => {
     // firsrParagraphOfHtml(html: string):string
     t.is(_if.firstParagraphOfHtml(`<p>first</p><p>second</p>`), `first`);
     t.is(_if.firstParagraphOfHtml(`<p>f<b>i</b>r<i>s</i>t</p><p>second</p>`), `first`);
@@ -94,4 +94,8 @@ Mama, why did you raise me this way?`
     t.same(_if.runMetaConverters({num: 1, str: 'wee', arr: [1, 2, 3]}, {num: n=>-1, str: s=>s+s}, true),
         {num: -1, str: 'weewee', arr: [1, 2, 3]}
     );
+});
+
+test('page->fabric', t => {
+    console.log(page.fromSourceSync('files/content1.md'));
 });

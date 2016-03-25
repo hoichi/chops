@@ -2,6 +2,25 @@
 
 We do retrieve meta, but we don't know what to do with it.
 
+## IN
+
+It seems that all the source files have common traits. They:
+- can be watched
+- and read
+- and parsed/compiled
+- and fire some data to its subscribers.
+
+Which means that a function that renders (and writes) observes both (compiled) template functions and its data.
+
+(Duh.)
+
+### Questions:
+- How do we customize gathering all the data from single files into model(s)?
+- How do we watch for template partials?
+    1. Recompile all the templates if a single partials is changed
+    2. Tell the engine how to look for partials in the templates (with regexps, for instance). Kinda sucks to do it for the template engine. Then again, Jade has `compileClientWithDependenciesTracked`. _And_ we could always fall back to 1. if 2. is not provided.
+
+
 ## What the engine does
 - PAGES (and posts)
     - reads the files

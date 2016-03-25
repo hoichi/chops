@@ -1,3 +1,13 @@
+# IN
+- [ ] copy _important_ things from the notebook
+- [ ] RxJS
+    - [ ] install
+    - [ ] rtfm
+- [ ] start tech specs
+- [ ] clean up func specs
+- [ ] clean up todos
+- [ ] move all things possible to different modules
+
 # V0.1.0
 - [ ] PAGES
     - [x] constructor
@@ -12,7 +22,7 @@
         - [x] setup AVA
         - [x] setup Babel
         - [x] compile, then run
-        - [ ] functions
+        - [x] functions
         - [ ] constructor
         - [ ] setConfig
         - [ ] setProperties
