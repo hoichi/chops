@@ -5,9 +5,7 @@
   "main": "index.js",
   "scripts": {
     "babel": "babel src -d lib",
-
     "test": "ava",
-
     "prepublish": "~bundle them shits somehow~"
   },
   "repository": {
@@ -28,6 +26,7 @@
   "homepage": "https://github.com/hoichi/silkworm#readme",
   "dependencies": {
     "front-matter": "^2.0.5",
+    "fs-jetpack": "^0.7.3",
     "lodash": "^4.3.0"
   },
   "devDependencies": {
