@@ -25,6 +25,7 @@
   },
   "homepage": "https://github.com/hoichi/silkworm#readme",
   "dependencies": {
+    "eventemitter3": "^1.1.1",
     "front-matter": "^2.0.5",
     "fs-jetpack": "^0.7.3",
     "lodash": "^4.3.0"

@@ -4,8 +4,6 @@ We do retrieve meta, but we don't know what to do with it.
 
 ## IN
 
-- can we make all the chained calls temporally isolated? or should the order be a part of the semantics?  
-
 ### Questions:
 - How do we customize gathering all the data from single files into model(s)?
 - How do we watch for template partials?
@@ -63,3 +61,9 @@ We do retrieve meta, but we don't know what to do with it.
     - and there shouldn't be any detached collections. it's all one big Site object
     - and we should be able to react once a file is added or deleted
         - and update collections somehow
+
+## Data flow
+
+If all the dest nodes are emitting file writes as soon as they're ready, the collections are gonna be written over and over as long as new files are read. Unless we're waiting for the reading queue to empty and then, after some debounce maybe, start writing [collections]. Or, for that matter, even rendering them.
+And that makes our architecture more convoluted (and quite possibly more coupled). Now we have to not only check for the full model, we have wait for green light as well.
+But that's optimisation, not for the proof-of-concept stage. I think I can tolerate collections rewrites for a while.
