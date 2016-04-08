@@ -1,7 +1,9 @@
 'use strict';
 
 import ee       from 'events';
-import util     from 'util'
+import has      from 'lodash/fp/has';
+import util     from 'util';
+
 
 /*
 - cache the latest actual data
@@ -16,7 +18,7 @@ Meaning we should somehow check whether the data is full, either by having a met
 But then we don't need separate transformers. Might make some sense for objects, so that every transformer merges its part, but makes zero sense for page rendering, for instance. We do have to discern sources or kinds of data though, so the events have to have _some_ signature. So we can still check the pieces type and check them off.
 But can we know what pieces we need just by what we're listening to? Or should we state it explicitly? We probably need a second mechanism anyway: like, when we code a file writer, we know beforehand we gonna need a file path, whatever we listen to.
 
-Then we can just send this: `emit('data', 'model', {...}), emit('data', 'template', fnCompiled)`, and have our input model like this:
+Then we can just send this: `emit('data', {model: {...}}), emit('data', {template: fnCompiled})`, and have our input model like this:
 ```js
 {
     model: {...},
@@ -27,20 +29,27 @@ We could even transform and check for data completeness at the same time. Either
 
 Also, we prob' need to fire 'ready' when we're ready. For our traffic guard and shit.
 
+ var de = DEFabric({
+     checker: data => {data.hasAll(['p1', 'p2.p3'])},
+     transformer: data => {data.content}
+ });
+
  */
 
-function DEFabric({dataOutType='data'}) {
+function DEFabric() {
     if ( !(this instanceof DEFabric) ) {return new DEFabric()}
 
     let isDataReady,
+        dataIn,
         dataOut,
-        defOutType = dataOutType,
-        transformers = [],
         listeners = [],
         onNewListener = (event, listener) => {
             if (event === 'data' && isDataReady) {
-                listener(data);
+                listener(dataOut);
             }
+        },
+        checkData = () => {
+
         };
 
     function DataTransmitter() {
@@ -59,35 +68,55 @@ function DEFabric({dataOutType='data'}) {
                 if (!listeners.length) {return;}
             }
         },
-        recieve: {
+        recieveData: {
             enumerable: true,
-            value: (dataIn, type='data') => {
+            value: (newData) => {
                 var ctx = this,
-                    transform = transformers[type],
-                    dataType;
+                    newOut;
 
-                isDataReady = true;
-                dataOut = transform ? transform(dataIn) : dataIn;
-
-                if (dataOut.dataType) {     // transform function can return more than data
-                    ({data: dataOut, dataType} = dataOut);
-                } else {
-                    dataType = defOutType;
+                Object.assign(dataIn, newData);
+                newOut = transform(dataIn);    /* I'm still thinking that checking and transforming data
+                                                should be done in one pass. I'm probably wrong cause
+                                                do one thing and shit (and cause checking for properties
+                                                is probably cheaper than merging), but let's wait
+                                                for some cases. */
+                if (!newOut) {
+                    // you're not ready yet
+                    return;
                 }
 
-                this.emit(dataOut, dataType);
+                isDataReady = true;
+                dataOut = newOut;
+                this.emit('ready');
+                this.emit('data', dataOut);
             }
+        },
+        checkData: {
+            enumerable: true,
+            value: {}
         },
         onFullData: {
-            enumerable: false,
+            configurabe: true,
             value: () => {
-                throw Error('`onFullData` method not defined, your Transmitter implementation ~~sucks~~ is incomplete');
+                throw TypeError('`onFullData` method not implemented');
             }
         },
-        isDataFull: {
-            enumerable: false,
+        hasFullData: {
+            configurable: true,
             value: () => {
+                throw TypeError('`hasFullData` method not implemented');
+            }
+        },
+        hasAllProperties: {
+            enumerable: true,
+            value: (paths) => {
+                paths.forEach(p => {
+                   if (!has(dataIn, p)) {
+                       return false;
+                   }
+                });
 
+                return true;
             }
         }
     });
