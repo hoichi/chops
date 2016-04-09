@@ -2,6 +2,7 @@
 
 import ee       from 'events';
 import has      from 'lodash/fp/has';
+import isArray  from 'lodash/fp/isArray';
 import util     from 'util';
 
 
@@ -36,7 +37,10 @@ Also, we prob' need to fire 'ready' when we're ready. For our traffic guard and 
 
  */
 
-function DEFabric() {
+function DEFabric({
+    checker = data => !!data,
+    transformer = data => data
+}) {
     if ( !(this instanceof DEFabric) ) {return new DEFabric()}
 
     let isDataReady,
@@ -47,10 +51,19 @@ function DEFabric() {
             if (event === 'data' && isDataReady) {
                 listener(dataOut);
             }
-        },
-        checkData = () => {
-
         };
+
+    if (isArray(checker)) {
+        let checkerPaths = checker;
+
+        checker = data => {
+            checkerPaths.forEach(path => {
+                if (!has(data, path)) { return false; }
+            });
+
+            return true;
+        }
+    }
 
     function DataTransmitter() {
         isDataReady = false;

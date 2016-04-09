@@ -1,5 +1,6 @@
 # IN
-- [ ] fs-jetpack, chokidar, chokidar-minimatch(?)   @net
+- [ ] try and define levels for events (from upstream to downstream)
+- [ ] chokidar   @net
 - [ ] stampit   @net
 - [ ] ES docs to Zeal
 - [ ] noops obs link (that just passes data through)
