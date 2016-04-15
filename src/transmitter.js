@@ -30,23 +30,23 @@ We could even transform and check for data completeness at the same time. Either
 
 Also, we prob' need to fire 'ready' when we're ready. For our traffic guard and shit.
 
- var de = DEFabric({
+ var de = TransmitterFabric({
      checker: data => {data.hasAll(['p1', 'p2.p3'])},
      transformer: data => {data.content}
  });
 
  */
 
-function DEFabric({
+function TransmitterFabric({
     checker = data => !!data,
-    transformer = data => data
+    transformer = input => input
 }) {
-    if ( !(this instanceof DEFabric) ) {return new DEFabric()}
+    if ( !(this instanceof TransmitterFabric) ) {return new TransmitterFabric()}
 
     let isDataReady,
         dataIn,
         dataOut,
-        listeners = [],
+        dataListeners = [],
         onNewListener = (event, listener) => {
             if (event === 'data' && isDataReady) {
                 listener(dataOut);
@@ -56,13 +56,13 @@ function DEFabric({
     if (isArray(checker)) {
         let checkerPaths = checker;
 
-        checker = data => {
+        checker = function dataPropertiesChecker(data) {
             checkerPaths.forEach(path => {
                 if (!has(data, path)) { return false; }
             });
 
             return true;
-        }
+        };
     }
 
     function DataTransmitter() {
@@ -73,63 +73,47 @@ function DEFabric({
     util.inherits(DataTransmitter, ee); // ?
 
     Object.defineProperties(DataTransmitter.prototype, {
-        emit: {
+        fireData: {
             enumerable: true,
             value: (data, dType) => {
+                var ctx = this,
+                    dataListeners = listeners['data'],
+                    len = dataListeners.length;
+
+                if (!len) {return}
+
+                for (let i = 0; i < len; i++) {
+                    dataListeners[i](dataOut);
+                }
+            }
+        },
+        onData: {
+            enumerable: true,
+            value: newData => {
                 var ctx = this;
 
-                if (!listeners.length) {return;}
-            }
-        },
-        recieveData: {
-            enumerable: true,
-            value: (newData) => {
-                var ctx = this,
-                    newOut;
-
                 Object.assign(dataIn, newData);
-                newOut = transform(dataIn);    /* I'm still thinking that checking and transforming data
-                                                should be done in one pass. I'm probably wrong cause
-                                                do one thing and shit (and cause checking for properties
-                                                is probably cheaper than merging), but let's wait
-                                                for some cases. */
-                if (!newOut) {
-                    // you're not ready yet
+                if (!checker(dataIn)) {
                     return;
                 }
-
+                // $TODO: split reaction and action. as in, make pure writables. maybe fire `ready`?
                 isDataReady = true;
-                dataOut = newOut;
+                dataOut = transformer(dataIn);
                 this.emit('ready');
-                this.emit('data', dataOut);
+                this.emit(data, dataOut);
             }
         },
-        checkData: {
+        addDataListener: {
             enumerable: true,
-            value: {}
-        },
-        onFullData: {
-            configurabe: true,
-            value: () => {
-                throw TypeError('`onFullData` method not implemented');
-            }
-        },
-        hasFullData: {
-            configurable: true,
-            value: () => {
-                throw TypeError('`hasFullData` method not implemented');
-            }
-        },
-        hasAllProperties: {
-            enumerable: true,
-            value: (paths) => {
-                paths.forEach(p => {
-                   if (!has(dataIn, p)) {
-                       return false;
-                   }
-                });
+            value: newListener => {
+                let realListener = newListener.onData ? newListener.onData : newListener;
 
-                return true;
+                dataListeners.push(realListener);
+
+                if (isDataReady) {
+                    realListener(dataOut);  // That's coupled. But then making a function for calling
+                                            // a single listener is extremely convoluted
+                }
             }
         }
     });

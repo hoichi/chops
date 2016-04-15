@@ -106,7 +106,7 @@ function PageFabric() {
             }
         },
         next: {
-            get: () => {/* todo: or should it be a simple value set by .collect()? */
+            get: () => {/* todo: or should it be a simple value set by .addTo()? */
             }
         },
     });

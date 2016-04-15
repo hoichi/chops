@@ -1,4 +1,4 @@
-# April '04
+# April 8 '16
 
 So, how it should look in hoio's case:
 
@@ -50,5 +50,12 @@ Or quite another approach would be to avoid sending anything downstream when the
  
 (Again, how likely it is that chokidar events would choke the whole thing so bad that we'll never get downstream? Not really, I'd hazard, but maybe we should take precaution.)
 
+# April 11 '16
 
+Over the last couple of days I've came up with a hybrid approach: our traffic guard sits before collections and keeps a queue of data packages. And when the queue is empty, if fires `ready` to collections (should single pages be subscribed?) et voila.
 
+Still the t-guard probably needs to listen to `ready` from chokidar. I mean, watching (and reading and parsing) files might be slower than collecting them, so we may end up with an empty queue after parsers while file system still has something to say.
+
+Well, the much easier alternative would be debouncing. Might just work, especially for simple cases like static builds. Maybe I should even add some logging and profiling and see for myself.
+
+Anyway, first -- the basic stuff without any throttling, guards etc. Doesn't matter for my minuscule blog.

@@ -25,10 +25,12 @@
   },
   "homepage": "https://github.com/hoichi/silkworm#readme",
   "dependencies": {
+    "chokidar": "^1.4.3",
     "eventemitter3": "^1.1.1",
     "front-matter": "^2.0.5",
     "fs-jetpack": "^0.7.3",
-    "lodash": "^4.3.0"
+    "lodash": "^4.3.0",
+    "stampit": "^2.1.1"
   },
   "devDependencies": {
     "ava": "^0.13.0",

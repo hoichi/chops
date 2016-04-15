@@ -1,16 +1,15 @@
 # IN
-- [ ] try and define levels for events (from upstream to downstream)
-- [ ] chokidar   @net
-- [ ] stampit   @net
-- [ ] ES docs to Zeal
-- [ ] noops obs link (that just passes data through)
 
 # V0.1.0
 - [ ] create event system
-    - [ ] use EventEmitter
+    - [ ] basic stuff, without any throttling, queues etc.
+        - [ ] data transmitting
+            - [x] write
+            - [ ] test
+    - [ ] implement 
     - [ ] module
     - [ ] tests
-// for templates and data, write pure function first. chainable calls are for v0.2
+// for templates and data, write pure function first. chainable calls are for v0.2 at least
 - [ ] TEMPLATES
     - [ ] compile
         - [ ] listen (to template changes)
