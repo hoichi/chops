@@ -59,3 +59,18 @@ Still the t-guard probably needs to listen to `ready` from chokidar. I mean, wat
 Well, the much easier alternative would be debouncing. Might just work, especially for simple cases like static builds. Maybe I should even add some logging and profiling and see for myself.
 
 Anyway, first -- the basic stuff without any throttling, guards etc. Doesn't matter for my minuscule blog.
+
+# April 16 '16
+
+Didn't start really well. There's something wrong with my discipline, I guess. Too much Feedly and el-murid. Also, some attention residue from thinking of upgrading (and patching) my Kobo. How about?
+
+By the by, how does `unlink` propagate? How much do we have to remove? Do we have lists all over the place, not just emplicit collections?
+
+(Well, at least `unlink` should go all the way down to the file writer level, for the dest files to be removed. _And_ a site should have at least one list of pages, I guess. To... you know. I mean, why not.)
+
+Tried to do a implement collection. Not sure I'm done. Tried to use `stampit`. Not sure it agrees with me. And I guess I still haven't solved my favourite conundrum: can I use a single `data` event for everything, or do I use muliple data-carrying events (besides the non-carrying ones, like `ready`)?
+
+Maybe we need both interfaces. Maybe I can add separate listeners for separate events, or I can add a single one.
+And maybe, either way, all listeners go through the same dispatcher.
+
+Either way, time to go home.

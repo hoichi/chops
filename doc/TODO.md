@@ -2,6 +2,11 @@
 
 # V0.1.0
 - [ ] create event system
+    - [ ] make collections
+        - [ ] create api
+        - [ ] write tests
+        - [ ] make it work
+        - [ ] and only then move boilerplate to transmitter
     - [ ] basic stuff, without any throttling, queues etc.
         - [ ] data transmitting
             - [x] write
