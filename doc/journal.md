@@ -73,4 +73,14 @@ Tried to do a implement collection. Not sure I'm done. Tried to use `stampit`. N
 Maybe we need both interfaces. Maybe I can add separate listeners for separate events, or I can add a single one.
 And maybe, either way, all listeners go through the same dispatcher.
 
-Either way, time to go home.
+Either way, time to go home.`
+
+# April 20 '16
+
+I mean, should our transmitters run anything at all? Or are transformers sufficient? Or should our endpoints simply not be transmitters (like, say, chokidar is not a transmitter)?
+
+# April 21 '16
+
+Oh my fuck. All of a sudden I've written my `Transmitter` fabric _and_ my `Collection` fabric that reuses transmitter. Haven't tested a single thing, so it probably doesn't work, but collections code looks pretty simple and logical.
+
+I probably shouldn't forget that it's a hobby project so I shouldn't really beat myself about it too hard. Also, I have a lot of room for DW practice back at TimePad. There are some UX disputes there, for instance, and it's brilliant! Also, documentation. Also, various process optimizations. All those non-coding tasks that I see as a distraction could actually prove very useful for TimePad _and_ for me.

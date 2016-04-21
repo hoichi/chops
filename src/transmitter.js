@@ -1,9 +1,10 @@
 'use strict';
-
-import ee       from 'events';
-import has      from 'lodash/fp/has';
-import isArray  from 'lodash/fp/isArray';
-import util     from 'util';
+import ee           from 'events';
+import loDefaults   from 'lodash/fp/defaults';
+import loHas        from 'lodash/fp/has';
+import loIsArray    from 'lodash/fp/isArray';
+import loSet        from 'lodash/fp/set';
+import util         from 'util';
 
 
 /*
@@ -14,7 +15,7 @@ import util     from 'util';
 - on `newListener`, if data is ready, fire it right off
 
 Okay, so all the config data are part of the model. Destination path, for instance, is a part of the file writing nodes. So even if we have html content to write, we're still waiting for the path before we can actually emit anything.
-Meaning we should somehow check whether the data is full, either by having a method that is called on any data arrival, or by checking off pieces of data. I mean, if we have different transformers for different data types, we might as well check that anything of this type has arrived.
+Meaning we should somehow check whether the data is full, either by having a method that is called on any data arrival, or by checking off pieces of data. I mean, if we have different transformers for different data types, we might as well check that anything of this type loHas arrived.
 
 But then we don't need separate transformers. Might make some sense for objects, so that every transformer merges its part, but makes zero sense for page rendering, for instance. We do have to discern sources or kinds of data though, so the events have to have _some_ signature. So we can still check the pieces type and check them off.
 But can we know what pieces we need just by what we're listening to? Or should we state it explicitly? We probably need a second mechanism anyway: like, when we code a file writer, we know beforehand we gonna need a file path, whatever we listen to.
@@ -37,9 +38,12 @@ Also, we prob' need to fire 'ready' when we're ready. For our traffic guard and 
 
  */
 
-function TransmitterFabric({
+export default function TransmitterFabric({
     checker = data => !!data,
-    transformer = input => input
+    runner = null,
+    transformers = {},
+    outEvent = 'data',
+    outPath = ''
 }) {
     if ( !(this instanceof TransmitterFabric) ) {return new TransmitterFabric()}
 
@@ -47,18 +51,18 @@ function TransmitterFabric({
         dataIn,
         dataOut,
         dataListeners = [],
-        onNewListener = (event, listener) => {
-            if (event === 'data' && isDataReady) {
-                listener(dataOut);
-            }
-        };
+        transformersIn = Object.assign({},
+            transformers.in || {},
+            {all: assignByPath()}
+        ),
+        transformerOut = transformers.out || (d => d);
 
-    if (isArray(checker)) {
+    if (loIsArray(checker)) {
         let checkerPaths = checker;
 
         checker = function dataPropertiesChecker(data) {
             checkerPaths.forEach(path => {
-                if (!has(data, path)) { return false; }
+                if (!loHas(data, path)) { return false; }
             });
 
             return true;
@@ -70,55 +74,73 @@ function TransmitterFabric({
         return this;
     }
 
-    util.inherits(DataTransmitter, ee); // ?
+    // util.inherits(DataTransmitter, ee); // ?
 
     Object.defineProperties(DataTransmitter.prototype, {
-        fireData: {
+        emit: {
             enumerable: true,
-            value: (data, dType) => {
-                var ctx = this,
-                    dataListeners = listeners['data'],
-                    len = dataListeners.length;
+            value: (event = outEvent, data) => {
+                var dataListeners = listeners[event],
+                    len = dataListeners && dataListeners.length,
+                    moreArgs = [].slice.call(arguments, 2); // besides event and data
 
                 if (!len) {return}
 
                 for (let i = 0; i < len; i++) {
-                    dataListeners[i](dataOut);
+                    dataListeners[i](event, dataOut, ...moreArgs);
                 }
             }
         },
-        onData: {
+        recieve: {
             enumerable: true,
-            value: newData => {
-                var ctx = this;
+            value: (event = 'data', newData, path = '') => {
+                var transform = transformersIn[event] || transformersIn['all'];
 
-                Object.assign(dataIn, newData);
+                // transforming input
+                dataIn = transform(dataIn, newData, path);
+                //checking
                 if (!checker(dataIn)) {
                     return;
                 }
-                // $TODO: split reaction and action. as in, make pure writables. maybe fire `ready`?
+
                 isDataReady = true;
-                dataOut = transformer(dataIn);
+                // ready to transform output
+                dataOut = transformers.out(dataIn);
+
+                // anything to run?
+                if (runner) {
+                    runner(dataIn, dataOut);
+                }
+
+                this.emit(outEvent, dataOut);   // we should `emit` even if we don't have listeners.
+                                                // they might be added later
                 this.emit('ready');
-                this.emit(data, dataOut);
             }
         },
-        addDataListener: {
+        on: {
             enumerable: true,
             value: newListener => {
-                let realListener = newListener.onData ? newListener.onData : newListener;
+                var reciever = newListener.recieve ? newListener.recieve : newListener;
 
-                dataListeners.push(realListener);
+                dataListeners.push(reciever);
 
                 if (isDataReady) {
-                    realListener(dataOut);  // That's coupled. But then making a function for calling
-                                            // a single listener is extremely convoluted
+                    reciever(outEvent, dataOut, outPath);  // That's coupled. But then making a function for calling
+                                        // a single listener is extremely convoluted
                 }
             }
+        },
+        hasListeners: {
+            enumerable: true,
+            value: () => true
         }
     });
 
     return new DataTransmitter();
 }
 
+function assignByPath(data, newData, path = '') {
+    let pathedNew = loSet({}, path, newData);
 
+    return Object.assign({}, data, pathedNew);
+}

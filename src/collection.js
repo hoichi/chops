@@ -1,89 +1,64 @@
 'use strict';
 
-import isArray from 'lodash/fp/isArray';
-import orderBy from 'lodash/fp/orderBy';
-import stampit from 'stampit';
+import loIsArray    from 'lodash/fp/isArray';
+import loIsFunction from 'lodash/fp/isFunction';
+import loIteratee   from 'lodash/fp/iteratee';
+import loOrderBy    from 'lodash/fp/orderBy';
 
-const CollectableStamp = stampit()
-    .methods({
-       collect: collection => {
-           this.addListener('all', collection.onAll);
-       }
-    });
+export default function CollectionFabric({
+    sortIteratee = obj => obj.toString(),
+    sortOrders
+}) {
+    if ( !(this instanceof CollectionFabric) ) {return new CollectionFabric()}
 
+    let dataReady = false,
+        dataIn = {dic: {}},
+        dataOut = null,
+        listeners;
 
-const CollectionStamp = stampit()
-    .init(function CollectionInit (instance, stamp) {
-        var dataReady = false,
-            dataIn = {dic: {}},
-            dataOut = null,
-            listeners;
+    if (!loIsFunction(sortIteratee)) {
+        sortIteratee = loIteratee(sortIteratee);
+    }
 
-        function transform(input) {
-            return {
-                dic: input.dic,
-                idx: orderBy(input.dic, this.sortIteratees, this.sortOrders)
+    let Collection = TransmitterFabric({
+            checker: d => d.ready,
+            transformers: {
+                in: {
+                    add:        inAddOrChange,
+                    changed:    inAddOrChange,
+                    unlink:     inUnlink
+                },
+                out: outSort
             }
-        }
+        });
 
-        this.onReady = function onReady() {
-            dataReady = true;
-            this.flushWhenReady();
-            // todo: emit `ready`
-        };
+    return TransmitterFabric;
+}
 
-        this.flushWhenReady = function flushWhenReady(toWhom = listeners['data'] || []) {
-            if (!dataReady) return;
+function inAddOrChange(dataIn, newData) {
+    var key = sortIteratee(newData),
+        newRecord = Object.create(null);
 
-            dataOut = transform(dataIn);
-            toWhom.forEach( listener => {
-                listener(dataOut);       // todo: async
-            });
-        };
+    newRecord[key] = newData;
 
-        this.addListener = function addListener(listener, events = 'data') {
-            if (!isArray(events)) {
-                events = [events];
-            }
+    return {...dataIn, newRecord}
+}
 
-            events.forEach((event, idx) => {
-                if (!isArray(listeners[event])) {
-                    listeners[event] = [];
-                }
+function inUnlink(dataIn, newData) {
+    var key = sortIteratee(newData);
 
-                listeners[event].push(listener);
-            });
+    if (dataIn[key]) {
+        let result = {...dataIn};
+        delete result[key];
+        return result;
+    }
 
-            flushWhenReady([listener]);
-        }
-    })
-    .refs({
-        sortIteratees:  [],
-        sortOrders:     []
-    })
-    .methods({
-        onAddOrChanged: function onAddOrChanged(item) {
-            var key = sortIteratees(item),
-                dic = dataIn.dic;
+    return dataIn;
+}
 
-            if (!dic[key]) {
-                dataIn.counter++;
-            }
-
-            dic[key] = item;
-
-            flushWhenReady();
-        },
-        onUnlink: function onUnlink(item) {
-            var key = sortIteratees(item),
-                dic = dataIn.dic;
-
-            if (dic[key]) {
-                delete dic[key];
-                dataIn.counter--;
-            }
-
-            flushWhenReady();
-        }
-    });
-
+function outSort(dataIn) {
+    return {
+        dic: input.dic,
+        idx: loOrderBy(input.dic, [this.sortIteratee], [this.sortOrder])
+    }
+};
