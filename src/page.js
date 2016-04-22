@@ -249,8 +249,6 @@ let _innerFunctions = {  // you know, for unit tests
     },
     page = PageFabric();
 
-console.log(page.setConfig);
-
 export {
     page as default,
     _innerFunctions

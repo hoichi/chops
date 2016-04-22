@@ -95,7 +95,3 @@ Mama, why did you raise me this way?`
         {num: -1, str: 'weewee', arr: [1, 2, 3]}
     );
 });
-
-test('page->fabric', t => {
-    console.log(page.fromSourceSync('files/content1.md'));
-});
