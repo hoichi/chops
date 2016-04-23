@@ -6,7 +6,7 @@
 import test from 'ava';
 import transmitter from '../src/transmitter';
 
-test('transmitter->basics', t => {
+test.cb('transmitter->basics', t => {
     t.plan(5);
 
     var tr = transmitter({
@@ -30,6 +30,8 @@ test('transmitter->basics', t => {
             }
         }
     });
+
+    console.log(tr);
 
     tr.on('data', (event, obj, path) => {
         t.pass();

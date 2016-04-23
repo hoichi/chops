@@ -14,15 +14,15 @@ export default function TransmitterFabric({
     outEvent = 'data',
     outPath = ''
 }) {
-    if ( !(this instanceof TransmitterFabric) ) {return new TransmitterFabric(arguments)}
+    if ( !(this instanceof TransmitterFabric) ) {return new TransmitterFabric(...arguments)}
 
     let isDataReady,
         dataIn,
         dataOut,
-        dataListeners = [],
+        listeners = [],
         transformersIn = Object.assign({},
             transformers.in || {},
-            {all: assignByPath()}
+            {all: assignByPath}
         ),
         transformerOut = transformers.out || (d => d);
 
@@ -45,31 +45,31 @@ export default function TransmitterFabric({
 
     // util.inherits(DataTransmitter, ee); // ?
 
+    function callListener(listener, context, args) {
+        listener = listener.bind(context, ...args);
+        setTimeout(listener, 0);
+    }
+
     Object.defineProperties(DataTransmitter.prototype, {
         emit: {
             enumerable: true,
-            value: (event = outEvent, data) => {
-                var dataListeners = listeners[event],
-                    len = dataListeners && dataListeners.length,
-                    moreArgs = [].slice.call(arguments, 2); // besides event and data
+            value: function emit(event = outEvent, data) {
+                var theListeners = listeners[event],
+                    len = theListeners && theListeners.length;
 
                 if (!len) {return}
 
                 for (let i = 0; i < len; i++) {
-                    let cb = dataListeners[i];
-                    cb = cb.bind(this, event, dataOut, ...moreArgs);
-                    setTimeout(cb, 0);
+                    callListener(theListeners[i], this, arguments);
                 }
             }
         },
         recieve: {
             enumerable: true,
-            value: (event = 'data', newData, path = '') => {
+            value: function recieve(event = 'data', newData, path = '') {
                 var transform = transformersIn[event] || transformersIn['all'];
 
-                // transforming input
                 dataIn = transform(dataIn, newData, path);
-                //checking
                 if (!checker(dataIn)) {
                     return;
                 }
@@ -83,27 +83,33 @@ export default function TransmitterFabric({
                     runner(dataIn, dataOut);
                 }
 
-                this.emit(outEvent, dataOut);   // we should `emit` even if we don't have listeners.
-                                                // they might be added later
+                console.log(this);
+
+                this.emit(outEvent, dataOut, outPath);   // to all current and/or future listeners
                 this.emit('ready');
             }
         },
         on: {
             enumerable: true,
-            value: newListener => {
+            value: function on(event, newListener, context) {
                 var reciever = newListener.recieve ? newListener.recieve : newListener;
 
-                dataListeners.push(reciever);
+                if (!listeners[event]) {
+                    listeners[event] = [reciever];
+                } else {
+                    listeners[event].push(reciever);
+                }
 
                 if (isDataReady) {
-                    reciever(outEvent, dataOut, outPath);  // That's coupled. But then making a function for calling
-                                        // a single listener is extremely convoluted
+                    callListener(reciever, context || this, [outEvent, dataOut, outPath]);
                 }
             }
         },
         hasListeners: {
             enumerable: true,
-            value: () => true
+            value: function hasListeners() {
+                return true;
+            }
         }
     });
 
