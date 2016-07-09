@@ -2,6 +2,66 @@
 
 We do retrieve meta, but we don't know what to do with it.
 
+## Feature audit
+
+### What h.io gulpfile does right now
+- walks over some Jade and compiles them to a list of functions
+- walks over some .md w/yfm and create pages
+    - markdown is converted to html
+    - yfm is converted to meta
+    - is things like source path converted to meta? not sure
+- adds pages as posts (a total unconfigurable black box, just `site.addPost(page)`)
+- for each added post, renders it with a template and writes the result to `post.path` (no control over that)
+- renders the last 10 posts as a blog page and as rss
+
+### What it completely lacks
+- Pagination
+
+### What can (and should) be done better
+
+#### Configurability
+- you can change the way yfm/source path is converted to meta
+- you can (or maybe even should) explicitly add pages to collections
+- you can changes where the files are written
+- you can funnel a few source files into one output
+    - [ ] api for that
+- categories and tags can appear in pages' yfm and still have their own descriptions somewhere (maybe even in their own markdowns). meaning you can somehow marry one to another
+    - [ ] now solving the api for that would be epic
+- collections should have configurable destinations as well (they might not have any other, unlike posts)
+    - are `collection.dest()` and `bunchaPages.dest()` necessary? gulp conventions probably say yes. so maybe yes, even if `dest()` has no parameters and just uses defaults from meta.
+    - or maybe `.dest()` is just a config thing and the build process should be started by something else.
+- any difference between pages/posts should be reproduced with api calls
+
+
+#### Readability
+
+How about:
+```js
+    silkworm
+        .src(path)
+            .cfg({})    // should we have this cover-all object at all? and shouldn't we have it earlier?
+            .parse(m => md.convert(m))  // what's the case for different m/u parsers on different source paths?
+            .meta((path, meta) => {
+                // merge parameters, add your own. just deep merge by default
+                // also, meta can be an object, that can be merged as well    
+            })
+            .collect(collection1)  // Or vice versa. This way means collections are already created, which might be ok.
+            .collect(collection2)
+        dest(/* path/callback. the latter takes the meta and returns the path */);
+```
+
+Collections:
+```js
+    collection1 = silkworm
+                    .collection({/*config*/})
+                    .paginate()  /* is pagination a model concern or a template concern? what would Jekyll do? */ 
+                    .dest(/* path */); /* Maybe not much use for callback because there's no source meta with a path. Still we have to check if the dest. path is present for both pages and collections */
+```
+
+#### Whatchability
+
+Implementing it is a story for another day, but we should still have it in mind.
+
 ## IN
 
 ### Questions:
@@ -39,7 +99,7 @@ We do retrieve meta, but we don't know what to do with it.
         silkworm.pageFromSource(file, site, {})
             .collect(/*...*/);  // how does lodash combine chained calls with modularity?
         // or
-        page = silkworm.PageFromSource(/**/);
+        page = silkworm.pageFromSource(/**/);
         site.collections.blog.addPage(page, {sorted: {by: 'date', desc: true}});
     ```
 

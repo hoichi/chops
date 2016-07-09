@@ -3,29 +3,28 @@ import ee           from 'events';
 import loDefaults   from 'lodash/fp/defaults';
 import loHas        from 'lodash/fp/has';
 import loIsArray    from 'lodash/fp/isArray';
+import loIsFunction from 'lodash/fp/isFunction';
 import loSet        from 'lodash/fp/set';
 import util         from 'util';
 
 
 export default function TransmitterFabric({
     checker = data => {!!data},
-    runner = null,
-    transformers = {},
-    outEvent = 'data',
-    outPath = ''
+    reducers = {all: assignByPath},
+    output = {
+        type: 'data',
+        path: ''
+    }
+    // todo: real defaults
 }) {
     if ( !(this instanceof TransmitterFabric) ) {return new TransmitterFabric(...arguments)}
 
     let isDataReady,
-        dataIn,
+        data,
         dataOut,
-        listeners = [],
-        transformersIn = Object.assign({},
-            transformers.in || {},
-            {all: assignByPath}
-        ),
-        transformerOut = transformers.out || (d => d);
+        listeners = [];
 
+    // todo: function
     if (loIsArray(checker)) {
         let checkerPaths = checker;
 
@@ -45,8 +44,8 @@ export default function TransmitterFabric({
 
     // util.inherits(DataTransmitter, ee); // ?
 
-    function callListener(listener, context, args) {
-        listener = listener.bind(context, ...args);
+    function callListener(listener, context, action) {
+        listener = listener.bind(context, action);
         setTimeout(listener, 0);
     }
 
@@ -66,42 +65,41 @@ export default function TransmitterFabric({
         },
         recieve: {
             enumerable: true,
-            value: function recieve(event = 'data', newData, path = '') {
-                var transform = transformersIn[event] || transformersIn['all'];
+            value: function recieve(action) {
+                var type = action.type,
+                    reduce = reducers[type] || reducers['all'],
+                    outAction;
 
-                dataIn = transform(dataIn, newData, path);
-                if (!checker(dataIn)) {
+                if (!reduce) {
+                    throw Error(`No reducer for action type "${type}"`);
+                }
+
+                data = reduce(data, action);
+                if (!checker(data)) {
                     return;
                 }
 
                 isDataReady = true;
-                // ready to transform output
-                dataOut = transformers.out(dataIn);
-
-                // anything to run?
-                if (runner) {
-                    runner(dataIn, dataOut);
-                }
-
-                console.log(this);
-
-                this.emit(outEvent, dataOut, outPath);   // to all current and/or future listeners
-                this.emit('ready');
+                this.emit({...output, data});   // to all current and/or future listeners
+                this.emit({type: 'ready'});
             }
         },
         on: {
             enumerable: true,
-            value: function on(event, newListener, context) {
+            value: function on(type, newListener, context) {
                 var reciever = newListener.recieve ? newListener.recieve : newListener;
+                if (!loIsFunction(reciever)) {
+                    throw TypeError(`Listener is neither a function nor has a valid \`recieve\` method.`);
+                }
 
-                if (!listeners[event]) {
-                    listeners[event] = [reciever];
+                if (!listeners[type]) {
+                    listeners[type] = [reciever];
                 } else {
-                    listeners[event].push(reciever);
+                    listeners[type].push(reciever);
                 }
 
                 if (isDataReady) {
-                    callListener(reciever, context || this, [outEvent, dataOut, outPath]);
+                    callListener(reciever, context || this, {...output, data});
                 }
             }
         },

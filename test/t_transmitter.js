@@ -6,7 +6,7 @@
 import test from 'ava';
 import transmitter from '../src/transmitter';
 
-test.cb('transmitter->basics', t => {
+test.cb('Transmitter should execute the expected number of callbacks', t => {
     t.plan(5);
 
     var tr = transmitter({
@@ -31,8 +31,6 @@ test.cb('transmitter->basics', t => {
         }
     });
 
-    console.log(tr);
-
     tr.on('data', (event, obj, path) => {
         t.pass();
         t.end();
@@ -40,3 +38,33 @@ test.cb('transmitter->basics', t => {
 
     tr.recieve('data', 'ignore me');
 });
+
+test('Transmitter should pass along whatever data is fed to it', t => {
+    var tr = transmitter({
+        checker: () => true,
+        transformers: {
+            in: {
+                'data': (dIn, dNew) => {
+                    t.is(dNew, 'phase 1');
+                    return 'phase 2';
+                }
+            },
+            out: dIn => {
+                t.is(dIn, 'phase 2');
+                return 'phase 3';
+            }
+        }
+    });
+
+    tr.on('data', (event, obj, path) => {
+        t.is(obj, 'phase 3');
+    });
+
+    tr.recieve('data', 'phase 1')
+});
+
+// todo: pass some values
+// todo: multicast
+// todo: custom events
+// todo: no casting until ready
+// todo: defaults
