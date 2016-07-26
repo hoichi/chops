@@ -36,26 +36,36 @@ We do retrieve meta, but we don't know what to do with it.
 #### Readability
 
 How about:
+
 ```js
-    silkworm
+    silkworm.pages({/*cfg*/})
         .src(path)
-            .cfg({})    // should we have this cover-all object at all? and shouldn't we have it earlier?
-            .parse(m => md.convert(m))  // what's the case for different m/u parsers on different source paths?
+            .parse(m => md.convert(m))  // is there a case for different markup parsers on different source paths?
             .meta((path, meta) => {
                 // merge parameters, add your own. just deep merge by default
-                // also, meta can be an object, that can be merged as well    
+                // also, meta can be an object as well, and that is simply merged in    
             })
-            .collect(collection1)  // Or vice versa. This way means collections are already created, which might be ok.
+            .collect(collection1)  // Or vice versa. This (←) way means collections are already created, which might be ok.
             .collect(collection2)
+            .render(templates[`basicpage`])
         dest(/* path/callback. the latter takes the meta and returns the path */);
 ```
 
-Collections:
+Or:
+
 ```js
-    collection1 = silkworm
-                    .collection({/*config*/})
-                    .paginate()  /* is pagination a model concern or a template concern? what would Jekyll do? */ 
-                    .dest(/* path */); /* Maybe not much use for callback because there's no source meta with a path. Still we have to check if the dest. path is present for both pages and collections */
+siteX = silkworm.config()
+    .parse(m => md.convert(m))
+    .meta(callbackX);
+```
+
+Collections:
+
+```js
+collection1 = silkworm
+                .collection({/*config*/})
+                .paginate()  /* is pagination a model concern or a template concern? what would Jekyll do? */ 
+                .dest(/* path */); /* Maybe not much use for callback because there's no source meta this callback should process. Still we have to check if the dest. path is present for both pages and collections */
 ```
 
 #### Whatchability
@@ -81,27 +91,34 @@ Implementing it is a story for another day, but we should still have it in mind.
         - btw, `next` and `previous` easily default to `null` or smth. that said, should we give public methods to set it? or maybe these properties should have getters and setters, after all. their values in console.info() are not that important
     - that said, it would be nice to be able to use pages module per se, without collector
 
-    ### Page module usage
-    ```js
-    let pages = require('silkworm/pages');
-    pages.setConfig({/*...*/}); // reuses the same (reused) fabric
-    pages.newConfig({/*...*/}); // returns a new fabric with different settings
+### Page module usage
 
-    // should setConfig be lazy? so if we use only newConfigs, initial fabric doesn't go unused
-    // but then `pages.Page()` should create a fabric as well
-    ```
+```js
+let pages = require('silkworm/pages');
+pages.setConfig({/*...*/}); // reuses the same (reused) fabric
+pages.newConfig({/*...*/}); // returns a new fabric with different settings
+
+// should setConfig be lazy? so if we use only newConfigs, initial fabric doesn't go unused
+// but then `pages.Page()` should create a fabric as well
+```
 
 
-- COLLECTIONS
-    - add pages to collections
-    - sorting is optional (and configurable)
-    ```js
-        silkworm.pageFromSource(file, site, {})
-            .collect(/*...*/);  // how does lodash combine chained calls with modularity?
-        // or
-        page = silkworm.pageFromSource(/**/);
-        site.collections.blog.addPage(page, {sorted: {by: 'date', desc: true}});
-    ```
+### COLLECTIONS
+- add pages to collections
+- sorting is optional (and configurable)
+
+```js
+site.pageFromSource(file, {})
+    .collect(blog);  // how does lodash combine chained calls with modularity?
+// or
+page = engine.pageFromSource(/**/);
+site.collections.blog.addPage(page, {sorted: {by: 'date', desc: true}});
+// or
+siteA.readSource('blah')
+    .render(/* */)
+    .meta(/* */)
+    .collect(siteB.collections['crossposts']);
+```
 
 - SITE
     - we need vars for templates

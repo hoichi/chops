@@ -1,6 +1,13 @@
 # IN
 
 # V0.1.0
+- [ ] Write collections API (try both `pages.collect()` and `collection.add()`)
+    - [ ] When are collections rendered?
+    - [ ] Write APIs for tags and categories reading every single items’ markdowns.
+- [ ] See how pagination works in Jekyll
+- [ ] Write API for merging multiple sources
+
+# V0.2.0
 - [ ] create event system
     - [ ] make collections
         - [ ] create api

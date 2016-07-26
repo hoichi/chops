@@ -1,12 +1,14 @@
 'use strict';
+/**
+ * Created by hoichi on 20.07.2016.
+ */
 
-import mPage from './page.js';
-import mSite, {init as siteInit} from './site.js';
+import newSite from './site.js';
 
-const u = require('./utils.js');
+console.dir(newSite);
+console.dir(newSite());
+console.dir(newSite()());
 
 export {
-    mPage as Page,
-    mSite as Site,
-    u as utils
+    newSite
 }

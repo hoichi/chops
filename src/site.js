@@ -1,80 +1,30 @@
-/**
- * Created by hoichi on 07.11.15.
- */
 'use strict';
+/**
+ * Created by hoichi on 26.07.2016.
+ */
 
-const   _   = require('lodash'),
-        fm  = require('front-matter'),
-        fs  = require('fs'),
-        path = require('path'),
-        u = require('./utils.js');
+function SiteFabric() {
+    if (!(this instanceof SiteFabric)) { return new SiteFabric(); }
 
-const api = {
-    get categories()    {return ifReady(_category)},
-    get collections()   {return ifReady(_content)},
-    get data()          {return ifReady(_data)},
-    get description()   {return ifReady(_description)},
-    get domain()        {return ifReady(_domain)},
-    get pages()         {return ifReady(_pages)},
-    get posts()         {return ifReady(_posts)},
-    get time()          {return ifReady(_time)},
-    get title()         {return ifReady(_title)},
-    get tags()          {return ifReady(_tags)},
+    /* privates */
+    var cfg;
 
-    addPost
-};
-
-var _isReady = false,
-    _categories,
-    _data,
-    _description,
-    _domain,
-    _pages,
-    _posts,
-    _tags,
-    _time,
-    _title;
-
-function init() {
-    // $TODO: read site config
-    _categories = ['blog'];
-    _data = {};
-    _description = '';
-    _domain = 'www.hoichi.io';
-    _pages = [];
-    _posts = [];
-    _tags = [];
-    _time = new Date();
-    _title = 'Burogu desu';
-
-    _isReady = true;
-
-    return api;
-}
-
-function ifReady(val) {
-    if (!_isReady) {
-        throw new Error(`Object Site should be properly filled before you can consume it's data. Use \`fromSource\` or something.`);
-    } else {
-        return val;
-    }
-}
-
-function addPost(post) {
-    ifReady(null);
-    if (!post.published) {
-        return;
+    function Site() {
+        cfg = {};
+        return this;
     }
 
-    if ( !Array.isArray(_posts) ) {
-        _posts = [];
-    }
+    Object.defineProperties(Site.prototype, {
+        setConfig: {
+            enumerable: true,
+            value:  (newCfg = {}) => {
+                        cfg = {...cfg, ...newCfg};
+                        return this;    // fixme: how about not muting the old Site?
+                    }
+        }
+    });
 
-    let pos = _.sortedIndex(_posts, post, p => -p.date.getTime());
-    _posts.splice(pos, 0, post);
+    return Site();
 }
 
-export {
-    init as default,
-    init
-}
+export default SiteFabric;
