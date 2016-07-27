@@ -5,9 +5,10 @@
 
 import newSite from './site.js';
 
-console.dir(newSite);
-console.dir(newSite());
-console.dir(newSite()());
+console.dir(`Is newSite a fabric? ${newSite.isFabric}`);
+console.dir(`Is newSite a Site? ${newSite.isSite}`);
+console.dir(`Is newSite() a fabric? ${newSite().isFabric}`);
+console.dir(`Is newSite() a Site? ${newSite().isSite}`);
 
 export {
     newSite

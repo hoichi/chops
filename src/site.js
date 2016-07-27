@@ -17,14 +17,14 @@ function SiteFabric() {
     Object.defineProperties(Site.prototype, {
         setConfig: {
             enumerable: true,
-            value:  (newCfg = {}) => {
+            value:  function(newCfg = {}) {
                         cfg = {...cfg, ...newCfg};
                         return this;    // fixme: how about not muting the old Site?
                     }
         }
     });
 
-    return Site();
+    return new Site();
 }
 
 export default SiteFabric;
