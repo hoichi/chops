@@ -15,7 +15,7 @@ import * as chokidar from 'chokidar';
 * - channel site settings (that’s an advanced topic though)
 * - stream collections, transform collections, return more collections
 * - do it all lazily (iterators? aren’t they kinda pull?)
-* ehjyb vjz kzueijyrf
+*
 * */
 
 function SourceWatcherFabric(globs) {
@@ -32,14 +32,24 @@ function SourceWatcherFabric(globs) {
     }
 
     Object.defineProperties(SourceWatcher.prototype, {
-        setConfig: {
+        src: {
             enumerable: true,
-            value:  function(newCfg = {}) {
-                cfg = {...cfg, ...newCfg};
+            value:  function() {
                 return this;
             }
-        }
+        },
+        compile: {  // should it be just a universal .map()?
+            enumerable: true,
+            value:  function() {
+                return this;
+            }
+        },
+        // todo: `this` should be an empty map
+        // todo: test it
+        // todo: use chokidar and fill the map asyncronously
     });
+
+    /* todo: just create a chainable that*/
 
     return new SourceWatcher();
 }

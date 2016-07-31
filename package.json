@@ -1,5 +1,5 @@
 {
-  "name": "silkworm",
+  "name": "chops",
   "version": "0.1.0",
   "description": "A lean mean static... build... thing",
   "main": "src/index.js",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hoichi/silkworm.git"
+    "url": "git+https://github.com/hoichi/chops.git"
   },
   "keywords": [
     "static",
@@ -20,9 +20,9 @@
   "author": "Sergey Samokhov <hi@hoichi.io> (https://hoichi.io)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/hoichi/silkworm/issues"
+    "url": "https://github.com/hoichi/chops/issues"
   },
-  "homepage": "https://github.com/hoichi/silkworm#readme",
+  "homepage": "https://github.com/hoichi/chops#readme",
   "dependencies": {
     "chokidar": "^1.6.0",
     "eventemitter3": "^1.1.1",
