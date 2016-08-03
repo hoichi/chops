@@ -12,11 +12,49 @@ import * as chokidar from 'chokidar';
 *
 * what should it return? something very chainable. the mystery chop should:
 * - watch globs (so have a chokidar watcher inside)
-* - channel site settings (that’s an advanced topic though)
 * - stream collections, transform collections, return more collections
+* - channel site settings (that’s an advanced topic though)
 * - do it all lazily (iterators? aren’t they kinda pull?)
 *
 * */
+
+// todo: `Rx` wrapper for `chokidar`
+
+/* todo: try this:
+var source = Rx.Observable
+                .readTemplatesSomehow()
+                .filter(function (tpl, idx, obs) {
+                    return tpl.key === 'article';
+                });
+
+source.subscribe(
+    nextVal => {console.log('the template is ready, how ’bout the contents?')},
+    ...,
+    ...
+)
+
+And see if the log is getting called when the template gets compiled (it should, shouldn’t it?).
+ */
+
+/*
+* maybe something like:
+* src(...)
+*   .foo()
+*   .buzz()
+*   .rx( o => o
+*       .map()
+*       .filter()
+*       .whicheverRxOperatorYouPlease()
+*   )
+*   .bar()
+* */
+
+// look into: addToObject && addToPrototype
+// mind: rx-book is about RxJS 4, but 5.0 is already in beta 10
+// todo: look into `ericelliot/Ogen`
+
+
+
 
 function SourceWatcherFabric(globs) {
     if (!(this instanceof SourceWatcherFabric)) { return new SourceWatcherFabric(); }
@@ -38,7 +76,7 @@ function SourceWatcherFabric(globs) {
                 return this;
             }
         },
-        compile: {  // should it be just a universal .map()?
+        map: {
             enumerable: true,
             value:  function() {
                 return this;
@@ -48,8 +86,6 @@ function SourceWatcherFabric(globs) {
         // todo: test it
         // todo: use chokidar and fill the map asyncronously
     });
-
-    /* todo: just create a chainable that*/
 
     return new SourceWatcher();
 }
