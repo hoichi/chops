@@ -2,7 +2,13 @@
  * Created by hoichi on 28.07.2016.
  */
 
-import * as chokidar from 'chokidar';
+const   chokidar = require('chokidar'),
+        Rx = require('rx');
+
+// RxJS
+// - https://github.com/Reactive-Extensions/RxJS/blob/master/doc/gettingstarted/creating.md
+// - http://xgrommx.github.io/rx-book/content/guidelines/introduction/index.html#request-and-response
+
 /*
 * .src() eats globs, rounds up the files and spits out their contents, together with path info.
 *   - it provides bare file contents together with path info
@@ -55,7 +61,6 @@ And see if the log is getting called when the template gets compiled (it should,
 
 
 
-
 function SourceWatcherFabric(globs) {
     if (!(this instanceof SourceWatcherFabric)) { return new SourceWatcherFabric(); }
 
@@ -73,16 +78,18 @@ function SourceWatcherFabric(globs) {
         src: {
             enumerable: true,
             value:  function() {
-                return this;
+                var source = Rx.Observable.create(
+                    function (observer) {
+                        observer.onNext(/* some chokidar values */);
+                        // observer.onCompleted();
+                        // observer.onError();
+
+                        return Rx.Disposable.empty; // or do we need to dispose of smth?
+                    }
+                );
+                return this;    // return Observable?
             }
-        },
-        map: {
-            enumerable: true,
-            value:  function() {
-                return this;
-            }
-        },
-        // todo: `this` should be an empty map
+        }
         // todo: test it
         // todo: use chokidar and fill the map asyncronously
     });
