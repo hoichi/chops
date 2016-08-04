@@ -60,41 +60,45 @@ And see if the log is getting called when the template gets compiled (it should,
 // todo: look into `ericelliot/Ogen`
 
 
+function SourceWatcherFabric(globs, options) {   // exactly the thing that should return an observable, eh?
+    let watcher = chokidar.watch(globs, options);
 
-function SourceWatcherFabric(globs) {
-    if (!(this instanceof SourceWatcherFabric)) { return new SourceWatcherFabric(); }
+    return Rx.Observable.create(obs => {
+        watcher
+            .on('all', (event, path) => {
+                obs.onNext(bundleFileEvent(event, path))
+            })
+            .on('ready', () => {
+                /* if we’re just building one time, call obs.onCompleted()
+                *  if we’re watching, say we’re ready and stay on guard;
+                * */
+            })
+            .on('error', errMsg => {
+                throw Error(errMsg);    // or Rx.Observable.throw? or what?
+            });
 
-    /* privates */
-    var _globs,
-        watcher;
-
-    function SourceWatcher() {
-        _globs = globs;
-        watcher = chokidar.watch(globs);
-        return this;
-    }
-
-    Object.defineProperties(SourceWatcher.prototype, {
-        src: {
-            enumerable: true,
-            value:  function() {
-                var source = Rx.Observable.create(
-                    function (observer) {
-                        observer.onNext(/* some chokidar values */);
-                        // observer.onCompleted();
-                        // observer.onError();
-
-                        return Rx.Disposable.empty; // or do we need to dispose of smth?
-                    }
-                );
-                return this;    // return Observable?
-            }
-        }
-        // todo: test it
-        // todo: use chokidar and fill the map asyncronously
+        return Rx.Disposable.empty; // will we ever need to dispose of smth?
     });
+}
 
-    return new SourceWatcher();
+function packageFileEvent(event, path) {
+    return {event, path};
+/*
+    Possible file-related events:
+        add, addDir, change, unlink, unlinkDir
+
+    And all of them should sail right to the dest().
+    So, even leaving aside the dirs for a sec, adding, changing and removing should exist across all of our nodes.
+
+    Also, separation of concerns:
+        - data flow (or is Rx so intrinsic to the whole thing there’s nothing to abstract?)
+        - data interfaces and transformation logic
+        - dealing with chokidar (which is what this file should do)
+
+    I mean, just reacting to chokidar is fine, but what’s the standard contract this module should adhere to? And is there a standard contract?
+    Man, I think I’m architecturally astronavigating once again.
+ */
 }
 
 export default SourceWatcherFabric;
+

@@ -37,3 +37,4 @@ node_modules
 
 # The build
 lib/
+/build/
