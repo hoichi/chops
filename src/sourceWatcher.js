@@ -24,46 +24,13 @@ const   chokidar = require('chokidar'),
 *
 * */
 
-// todo: `Rx` wrapper for `chokidar`
-
-/* todo: try this:
-var source = Rx.Observable
-                .readTemplatesSomehow()
-                .filter(function (tpl, idx, obs) {
-                    return tpl.key === 'article';
-                });
-
-source.subscribe(
-    nextVal => {console.log('the template is ready, how ’bout the contents?')},
-    ...,
-    ...
-)
-
-And see if the log is getting called when the template gets compiled (it should, shouldn’t it?).
- */
-
-/*
-* maybe something like:
-* src(...)
-*   .foo()
-*   .buzz()
-*   .rx( o => o
-*       .map()
-*       .filter()
-*       .whicheverRxOperatorYouPlease()
-*   )
-*   .bar()
-* */
-
-// look into: addToObject && addToPrototype
 // mind: rx-book is about RxJS 4, but 5.0 is already in beta 10
-// todo: look into `ericelliot/Ogen`
 
 
-function SourceWatcherFabric(globs, options) {   // exactly the thing that should return an observable, eh?
-    let watcher = chokidar.watch(globs, options);
+function SourceWatcherFabric(globs, options) {
 
     return Rx.Observable.create(obs => {
+        let watcher = chokidar.watch(globs, options);
         watcher
             .on('all', (event, path) => {
                 obs.onNext(bundleFileEvent(event, path))
@@ -74,14 +41,17 @@ function SourceWatcherFabric(globs, options) {   // exactly the thing that shoul
                 * */
             })
             .on('error', errMsg => {
-                throw Error(errMsg);    // or Rx.Observable.throw? or what?
-            });
+                throw Error(errMsg);    // that should work. but what is Observable.throw, anyway?
+            })
+        ;
 
         return Rx.Disposable.empty; // will we ever need to dispose of smth?
     });
 }
 
 function packageFileEvent(event, path) {
+    // todo: read content
+    // todo: parse path
     return {event, path};
 /*
     Possible file-related events:

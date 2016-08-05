@@ -141,6 +141,17 @@ siteA.readSource('blah')
 
 ## Data flow
 
+Data can be:
+- added;
+- changed;
+- removed.
+
+On initial build, we should wipe the destination(s) clean ($todo: the ability to specify dirs to wipe explicitly). On watch, we can remove the dest files one by one.
+(Or can we watch destinations too and remove all the files that are data-starved and all the empty dirs?)
+
+Anyway, if one of several (obligatory) dependencies removed, the dependants down the chain should be removed too: we should check for data sufficiency every step of the way. 
+
 If all the dest nodes are emitting file writes as soon as they're ready, the collections are gonna be written over and over as long as new files are read. Unless we're waiting for the reading queue to empty and then, after some debounce maybe, start writing [collections]. Or, for that matter, even rendering them.
 And that makes our architecture more convoluted (and quite possibly more coupled). Now we have to not only check for the full model, we have wait for green light as well.
 But that's optimisation, not for the proof-of-concept stage. I think I can tolerate collections rewrites for a while.
+
