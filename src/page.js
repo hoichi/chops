@@ -137,27 +137,6 @@ function firstParagraphOfHtml(html) {
     return paragraphs[1].replace(/<(.|\n)*?>/g, '');
 }
 
-/*
- * Takes a path (and a working dir)
- * returns an object with:
- * - file base (sans extension)
- * - an arr of parent dirs
- * */
-function parsePath(path, cwd) {
-// todo: should we move it to Utils?
-// todo: check if file actually exists? or is senseless if we get it from Glob or smth? it kinda should fail gracefuly if it't removed by the time we get here
-    let {root, dir, base, ext, name} = mPath.parse(mPath.resolve(path)),
-        rel = mPath.relative(cwd, dir),
-        dirs = rel.split(mPath.sep);
-
-    return {
-        dirs,
-        ext,
-        name,
-        rel
-    }
-}
-
 function parseTextWithYfm(content) {
     let {attributes: meta, body} = fm(content);
     // todo: trim leading newlines

@@ -3,6 +3,7 @@
  */
 
 const   chokidar = require('chokidar'),
+        fs = require('fs'),
         Rx = require('rx');
 
 // RxJS
@@ -26,9 +27,7 @@ const   chokidar = require('chokidar'),
 
 // mind: rx-book is about RxJS 4, but 5.0 is already in beta 10
 
-
 function SourceWatcherFabric(globs, options) {
-
     return Rx.Observable.create(obs => {
         let watcher = chokidar.watch(globs, options);
         watcher
@@ -52,6 +51,10 @@ function SourceWatcherFabric(globs, options) {
 function packageFileEvent(event, path) {
     // todo: read content
     // todo: parse path
+/*
+    So... we don’t just send chokidar events down the line, do we?
+    We patch the model: add, remove, change. Right?
+*/
     return {event, path};
 /*
     Possible file-related events:
@@ -69,6 +72,44 @@ function packageFileEvent(event, path) {
     Man, I think I’m architecturally astronavigating once again.
  */
 }
+
+/*
+ * Returns an object in our standard format: {path, content, meta}
+ * Or should we have `source` instead of `path`? For different types of source?`
+ */
+function readFileAsChop(path, {encoding = 'UTF-8', cwd='.'}) {
+    // check if the path exists, maybe? oh, oh, chokidar
+    fs.readFile(path, {encoding}, (err, data) => {
+        if (err) throw err;
+
+        return {
+            content: data,
+            path: parsePath(path, cwd),
+            meta: {}
+        }
+    });
+}
+
+/*
+ * Takes a path (and a working dir)
+ * returns an object with:
+ * - file base (sans extension)
+ * - an arr of parent dirs
+ * */
+function parsePath(path, cwd) {
+// todo: check if file actually exists? or is senseless if we get it from Glob or smth? it kinda should fail gracefuly if it't removed by the time we get here
+    let {root, dir, base, ext, name} = mPath.parse(mPath.resolve(path)),
+        rel = mPath.relative(cwd, dir),
+        dirs = rel.split(mPath.sep);
+
+    return {
+        dirs,
+        ext,
+        name,
+        rel
+    }
+}
+
 
 export default SourceWatcherFabric;
 

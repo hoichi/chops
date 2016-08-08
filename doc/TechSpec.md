@@ -56,3 +56,12 @@ site.collections === {
 <renderer>  ←   <template compiler>
     ↓           (**a built page**, **meta**, **url**)
 <file writer>
+
+### Data chains
+
+Every...basically every file sent down the chains can be...
+    - .put()
+    - .patch()’ed
+    - .delete()’d
+    
+Although... how we do delete? Do we index by JSON.stringify(path)? Seems like it, but what if we don’t use .src()? Maybe that means that src() should kindly state the primary index.
