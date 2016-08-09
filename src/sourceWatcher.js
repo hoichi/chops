@@ -2,9 +2,11 @@
  * Created by hoichi on 28.07.2016.
  */
 
-const   chokidar = require('chokidar'),
-        fs = require('fs'),
-        Rx = require('rx');
+import Promise      from 'bluebird';
+import chokidar     from 'chokidar';
+import Rx           from 'rxjs/Rx';
+
+var     readFile =  Promise.promisify(require("fs").readFile);
 
 // RxJS
 // - https://github.com/Reactive-Extensions/RxJS/blob/master/doc/gettingstarted/creating.md
@@ -29,10 +31,10 @@ const   chokidar = require('chokidar'),
 
 function SourceWatcherFabric(globs, options) {
     return Rx.Observable.create(obs => {
-        let watcher = chokidar.watch(globs, options);
-        watcher
+        chokidar.watch(globs, options)
             .on('all', (event, path) => {
-                obs.onNext(bundleFileEvent(event, path))
+                packageFileEvent(event, path, options.cwd)
+                    .then(result => obs.onNext(result));
             })
             .on('ready', () => {
                 /* if we’re just building one time, call obs.onCompleted()
@@ -48,7 +50,10 @@ function SourceWatcherFabric(globs, options) {
     });
 }
 
-function packageFileEvent(event, path) {
+function packageFileEvent(event, path, cwd = '.', cb) {
+    var result = readFile(path)
+        .then()
+        .catch();
     // todo: read content
     // todo: parse path
 /*
@@ -67,9 +72,6 @@ function packageFileEvent(event, path) {
         - data flow (or is Rx so intrinsic to the whole thing there’s nothing to abstract?)
         - data interfaces and transformation logic
         - dealing with chokidar (which is what this file should do)
-
-    I mean, just reacting to chokidar is fine, but what’s the standard contract this module should adhere to? And is there a standard contract?
-    Man, I think I’m architecturally astronavigating once again.
  */
 }
 
@@ -82,7 +84,7 @@ function readFileAsChop(path, {encoding = 'UTF-8', cwd='.'}) {
     fs.readFile(path, {encoding}, (err, data) => {
         if (err) throw err;
 
-        return {
+        return {    // async as fuck
             content: data,
             path: parsePath(path, cwd),
             meta: {}
