@@ -2,11 +2,13 @@
  * Created by hoichi on 28.07.2016.
  */
 
-import Promise      from 'bluebird';
-import chokidar     from 'chokidar';
-import Rx           from 'rxjs/Rx';
+import * as chokidar    from 'chokidar';
+import * as fj          from 'fs-jetpack';
+import * as Path        from 'path';
+import * as Q           from 'q';
+import * as Rx          from 'rxjs/Rx';
 
-var     readFile =  Promise.promisify(require("fs").readFile);
+var     readFile = Promise.promisify(require("fs").readFile);
 
 // RxJS
 // - https://github.com/Reactive-Extensions/RxJS/blob/master/doc/gettingstarted/creating.md
@@ -34,10 +36,10 @@ function SourceWatcherFabric(globs, options) {
         chokidar.watch(globs, options)
             .on('all', (event, path) => {
                 packageFileEvent(event, path, options.cwd)
-                    .then(result => obs.onNext(result));
+                .then(chop => obs.onNext(chop));
             })
             .on('ready', () => {
-                /* if we’re just building one time, call obs.onCompleted()
+                /* if we’re just building once, call obs.onCompleted()
                 *  if we’re watching, say we’re ready and stay on guard;
                 * */
             })
@@ -51,28 +53,35 @@ function SourceWatcherFabric(globs, options) {
 }
 
 function packageFileEvent(event, path, cwd = '.', cb) {
-    var result = readFile(path)
-        .then()
-        .catch();
-    // todo: read content
-    // todo: parse path
-/*
-    So... we don’t just send chokidar events down the line, do we?
-    We patch the model: add, remove, change. Right?
-*/
-    return {event, path};
-/*
-    Possible file-related events:
-        add, addDir, change, unlink, unlinkDir
+    let parsedPath = parsePath(path, cwd),
+        chop = {
+            path: parsedPath,
+            id: path    // for primary key. I'll think what to do with multiple cwds later
+        };
 
-    And all of them should sail right to the dest().
-    So, even leaving aside the dirs for a sec, adding, changing and removing should exist across all of our nodes.
+    if (['add', 'change'].includes(event)) {
+        return  fj.readAsync(path)
+                .then(rawCont => {
+                    chop.raw = rawCont;
 
-    Also, separation of concerns:
-        - data flow (or is Rx so intrinsic to the whole thing there’s nothing to abstract?)
-        - data interfaces and transformation logic
-        - dealing with chokidar (which is what this file should do)
- */
+                    return {
+                        event: event,
+                        chop
+                    }
+                })
+                .catch(err => {
+                    throw Error(`Exception while reading ${path}, error message: ${err.message}`)
+                });
+    } else if (event === 'unlink') {
+        return Q.fcall(() => {
+            return {
+                event: event,
+                chop
+            }
+        });
+    } else {
+        // todo: reject?
+    }
 }
 
 /*
@@ -100,14 +109,17 @@ function readFileAsChop(path, {encoding = 'UTF-8', cwd='.'}) {
  * */
 function parsePath(path, cwd) {
 // todo: check if file actually exists? or is senseless if we get it from Glob or smth? it kinda should fail gracefuly if it't removed by the time we get here
-    let {root, dir, base, ext, name} = mPath.parse(mPath.resolve(path)),
-        rel = mPath.relative(cwd, dir),
-        dirs = rel.split(mPath.sep);
+    let sep = Path.sep,
+        {root, dir, base, ext, name} = Path.parse(path),
+        rel = Path.relative(cwd, dir),
+        dirs = rel.split(sep);
 
     return {
+        dir,
         dirs,
         ext,
         name,
+        path,
         rel
     }
 }
