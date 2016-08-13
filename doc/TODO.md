@@ -1,5 +1,11 @@
 # IN
 
+# sourceWatcher
+- write a test
+    - use `mock-fs`
+    - export everything (maybe make `sourceWatcher.private.js`)
+    - maybe just use `fromEvent()` and `map()`? anyway, have tests to know it works
+
 # V0.1.0
 - [ ] Write collections API (try both `pages.collect()` and `collection.add()`)
     - [ ] When are collections rendered?

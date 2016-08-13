@@ -10,9 +10,13 @@ import * as Rx          from 'rxjs/Rx';
 
 var     readFile = Promise.promisify(require("fs").readFile);
 
-// RxJS
-// - https://github.com/Reactive-Extensions/RxJS/blob/master/doc/gettingstarted/creating.md
-// - http://xgrommx.github.io/rx-book/content/guidelines/introduction/index.html#request-and-response
+/*
+RxJS
+!! Observables are able to deliver values either synchronously or asynchronously.
+
+- http://reactivex.io/rxjs/manual/overview.html#anatomy-of-an-observable
+- http://xgrommx.github.io/rx-book/content/guidelines/introduction/index.html#request-and-response
+*/
 
 /*
 * .src() eats globs, rounds up the files and spits out their contents, together with path info.
@@ -31,9 +35,9 @@ var     readFile = Promise.promisify(require("fs").readFile);
 
 // mind: rx-book is about RxJS 4, but 5.0 is already in beta 10
 
-function SourceWatcherFabric(globs, options) {
+function SourceWatcherFabric(globs, options) {``
     return Rx.Observable.create(obs => {
-        chokidar.watch(globs, options)
+        let watcher = chokidar.watch(globs, options)
             .on('all', (event, path) => {
                 packageFileEvent(event, path, options.cwd)
                 .then(chop => obs.onNext(chop));
@@ -43,12 +47,12 @@ function SourceWatcherFabric(globs, options) {
                 *  if we’re watching, say we’re ready and stay on guard;
                 * */
             })
-            .on('error', errMsg => {
-                throw Error(errMsg);    // that should work. but what is Observable.throw, anyway?
+            .on('error', err => {
+                throw Error(err);
             })
         ;
 
-        return Rx.Disposable.empty; // will we ever need to dispose of smth?
+        return Rx.Disposable.create(() => watcher.stop());
     });
 }
 
@@ -56,7 +60,7 @@ function packageFileEvent(event, path, cwd = '.', cb) {
     let parsedPath = parsePath(path, cwd),
         chop = {
             path: parsedPath,
-            id: path    // for primary key. I'll think what to do with multiple cwds later
+            id: path    // for primary key. I'll think about dealing with multiple cwds later.
         };
 
     if (['add', 'change'].includes(event)) {
