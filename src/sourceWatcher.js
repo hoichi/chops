@@ -14,7 +14,7 @@ var     readFile = Promise.promisify(require("fs").readFile);
 RxJS
 !! Observables are able to deliver values either synchronously or asynchronously.
 
-- http://reactivex.io/rxjs/manual/overview.html#anatomy-of-an-observable
+- http://reactivex.io/rxjs/manual/overview.html#anatomy-of-an-observable`
 - http://xgrommx.github.io/rx-book/content/guidelines/introduction/index.html#request-and-response
 */
 
@@ -35,7 +35,7 @@ RxJS
 
 // mind: rx-book is about RxJS 4, but 5.0 is already in beta 10
 
-function SourceWatcherFabric(globs, options) {``
+function SourceWatcherFabric(globs, options) {
     return Rx.Observable.create(obs => {
         let watcher = chokidar.watch(globs, options)
             .on('all', (event, path) => {
