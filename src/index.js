@@ -4,7 +4,7 @@
  */
 
 import  newSite     from    './site.js'
-import  src         from    './sourceWatcher.js'
+import  src         from    './sourceWatcher.ts'
 
 module.exports = {
     newSite,
