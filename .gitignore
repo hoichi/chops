@@ -38,3 +38,6 @@ node_modules
 # The build
 lib/
 /build/
+
+# TS definitions from https://github.com/typings/typings
+/typings/

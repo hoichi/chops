@@ -1,4 +1,5 @@
 /// <reference path="../typings/index.d.ts" />
+/// <reference path="streaks.d.ts" />
 import * as chokidar    from 'chokidar';
 import * as fs          from 'fs';
 import * as Path        from 'path';
@@ -7,8 +8,6 @@ import * as Rx          from 'rxjs-es/Rx';
 
 /*
 RxJS
-!! Observables are able to deliver values either synchronously or asynchronously.
-
 - http://reactivex.io/rxjs/manual/overview.html#anatomy-of-an-observable`
 - http://xgrommx.github.io/rx-book/content/guidelines/introduction/index.html#request-and-response
 */
@@ -30,7 +29,7 @@ RxJS
 
 // mind: rx-book is about RxJS 4, but 5.0 is already in beta 10
 
-function SourceWatcherFabric(globs, options) {
+function SourceWatcherFabric(globs, options): AnyObj {
     return Rx.Observable.create(obs => {
         let watcher = chokidar.watch(globs, options)
             .on('all', (event, path) => {
@@ -49,25 +48,28 @@ function SourceWatcherFabric(globs, options) {
             })
         ;
 
-        return () => watcher.close();
+        return function unsubscribe() {watcher.close()};
     });
+
+    //todo: we should probably return a multi-cast observable
 }
 
-function packageFileEvent(event, path, cwd = '.', cb) {
+function packageFileEvent(event, path, cwd = '.', cb: (DropEvent) => void) {
     let parsedPath = parsePath(path, cwd),
-        chop = {
+        data: DropData = {
             path: parsedPath,
             id: path    // for primary key. I'll think about dealing with multiple cwds later.
         };
 
     if (event === 'add' || event === 'change') {
         try {
-            fs.readFile(path, (err, rawCont) => {
-                chop.raw = rawCont;
+            fs.readFile(path, 'utf-8', (err, rawCont) => {
+                // fixme: always pass _some_ encoding here, but don’t hardcode it
+                data.raw = rawCont;
 
                 cb({
                     event: event,
-                    chop
+                    data
                 });
             });
         } catch (err) {
@@ -76,7 +78,7 @@ function packageFileEvent(event, path, cwd = '.', cb) {
     } else if (event === 'unlink') {
         cb({
             event: event,
-            chop
+            data
         });
     } else {
         // todo: reject?
@@ -87,7 +89,7 @@ function packageFileEvent(event, path, cwd = '.', cb) {
  * Returns an object in our standard format: {path, content, meta}
  * Or should we have `source` instead of `path`? For different types of source?`
  */
-function readFileAsChop(path, {encoding = 'UTF-8', cwd='.'}) {
+function readFileAsDrop(path, {encoding = 'UTF-8', cwd='.'}) {
     // check if the path exists, maybe? oh, oh, chokidar
     fs.readFile(path, {encoding}, (err, data) => {
         if (err) throw err;
@@ -106,7 +108,7 @@ function readFileAsChop(path, {encoding = 'UTF-8', cwd='.'}) {
  * - file base (sans extension)
  * - an arr of parent dirs
  * */
-function parsePath(path, cwd) {
+function parsePath(path: string, cwd: string = '.'): ParsedPath {
 // todo: check if file actually exists? or is senseless if we get it from Glob or smth? it kinda should fail gracefuly if it't removed by the time we get here
     let sep = Path.sep,
         {root, dir, base, ext, name} = Path.parse(path),

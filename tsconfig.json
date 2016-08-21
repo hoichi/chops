@@ -1,11 +1,9 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es5",
-    "sourceMap": true,
-    "compileOnSave": true,
-    "sourceRoot": "src",
     "outDir": "build",
-    "strictNullChecks": true
+    "rootDir": "src",
+    "sourceMap": true,
+    "target": "es5"
   }
 }
