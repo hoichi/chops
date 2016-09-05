@@ -89,7 +89,7 @@ function packageFileEvent(event, path, cwd = '.', cb: (DropEvent) => void) {
  * Returns an object in our standard format: {path, content, meta}
  * Or should we have `source` instead of `path`? For different types of source?`
  */
-function readFileAsDrop(path, {encoding = 'UTF-8', cwd='.'}) {
+function packAChop(path, {encoding = 'UTF-8', cwd='.'}) {
     // check if the path exists, maybe? oh, oh, chokidar
     fs.readFile(path, {encoding}, (err, data) => {
         if (err) throw err;
@@ -109,7 +109,6 @@ function readFileAsDrop(path, {encoding = 'UTF-8', cwd='.'}) {
  * - an arr of parent dirs
  * */
 function parsePath(path: string, cwd: string = '.'): ParsedPath {
-// todo: check if file actually exists? or is senseless if we get it from Glob or smth? it kinda should fail gracefuly if it't removed by the time we get here
     let sep = Path.sep,
         {root, dir, base, ext, name} = Path.parse(path),
         rel = Path.relative(cwd, dir),

@@ -1,9 +1,9 @@
 # Chops
-The lean mean static... builder... thing. NOT ready for production.
+The lean mean static... builder... thing. NOT ready for production. Or for showing to anybody. But there it is.
 
 ## The what now?
 
-**Chops** is 50% a learning project and 50% a Jekyll killer. Well, it’s supposed to replace Jekyll. On a code-configuration scale it’s much closer to Gulp than to, say, [Brunch](http://brunch.io/). Here’s an idea of its API:
+**Chops** is 50% a learning project and 50% a Jekyll killer. Well, it’s not supposed to replace Jekyll. On a code-configuration scale it’s much closer to Gulp than to, say, [Brunch](http://brunch.io/). Here’s an idea of its API:
 
 ```js
  let collections = {

@@ -1,40 +1,8 @@
 ## IN
 
-It seems that all the source files have common traits. They can:
-- be watched
-- be read
-- be parsed/compiled
-- fire some data to its subscribers.
-
-Which means that a function that renders (and writes) observes both (compiled) template functions and its data.
-
-(Duh.)
-
 ## Collections
 
-A chainable `.collect()` can return a page with a (`prev`/`next`) set. otherwise it returns the same unchanged object.
-
-```js
-site.collections === {
-    rss: {/**/},
-    tags: {
-        'js': {/*all the posts*/},
-        'oop': {/**/},
-        'brainfart of the day': {/**/}
-    },
-    blog: {/**/},
-    categories: {
-        'blog': {/**/},
-        'projects': {/**/}
-    }    
-}
-```
-
-```js
-    site.collections['blog']
-        .render(/**/)
-        .dest();
-```
+A chainable `.collect()` (or something like `collectPrimary()`) passes down a page with (`prev`/`next`) set.
 
 ## Data
 
@@ -46,8 +14,8 @@ site.collections === {
     ↓           (**meta** (+path), **raw content**, **url**)
 <markup converter>
     ↓           (**meta**, **html content**)
-<url builder (default or configurable)>                 // That can be an RxJS-like, and not multicast at all.
-                                                        // Yes, it should be _set up_ chainably, but can be actually _executed_ at the same level as markup converter, whenever we have enough data available 
+<url builder (default or configurable)>                 
+        // Yes, it should be _set up_ chainably, but can be actually _executed_ at the same level as markup converter, whenever we have enough data available
     ↓           (**meta**, **html content**, **url**)
 <combiners (maybe)>
     ↓           (**a page build of a few more**)
@@ -63,5 +31,5 @@ Every...basically every file sent down the chains can be...
     - .put()
     - .patch()’ed
     - .delete()’d
-    
-Although... how we do delete? Do we index by JSON.stringify(path)? Seems like it, but what if we don’t use .src()? Maybe that means that src() should kindly state the primary index.
+
+Although... how we do delete? Do we index by source paths? Seems like it, but what if we don’t use `.src()`? Maybe that means that src() should kindly state the primary index.
