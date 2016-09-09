@@ -1,5 +1,5 @@
 /// <reference path="../typings/index.d.ts" />
-/// <reference path="streaks.d.ts" />
+/// <reference path="chops.d.ts" />
 import * as chokidar    from 'chokidar';
 import * as fs          from 'fs';
 import * as Path        from 'path';
@@ -26,8 +26,6 @@ RxJS
 * - do it all lazily (iterators? aren’t they kinda pull?)
 *
 * */
-
-// mind: rx-book is about RxJS 4, but 5.0 is already in beta 10
 
 function SourceWatcherFabric(globs, options): AnyObj {
     return Rx.Observable.create(obs => {
@@ -56,16 +54,17 @@ function SourceWatcherFabric(globs, options): AnyObj {
 
 function packageFileEvent(event, path, cwd = '.', cb: (DropEvent) => void) {
     let parsedPath = parsePath(path, cwd),
-        data: DropData = {
+        data: SourceContent = {
             path: parsedPath,
-            id: path    // for primary key. I'll think about dealing with multiple cwds later.
+            id: path,    // for primary key. I'll think about dealing with multiple cwds later.
+            rawContent: undefined
         };
 
     if (event === 'add' || event === 'change') {
         try {
             fs.readFile(path, 'utf-8', (err, rawCont) => {
                 // fixme: always pass _some_ encoding here, but don’t hardcode it
-                data.raw = rawCont;
+                data.rawContent = rawCont;
 
                 cb({
                     event: event,
