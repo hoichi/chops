@@ -4,7 +4,7 @@
   "description": "A lean mean static... build... thing",
   "main": "src/index.js",
   "scripts": {
-    "dev-install": "typings install",
+    "dev-install": "node_modules/typings/dist/bin.js install",
     "test": "ava"
   },
   "repository": {

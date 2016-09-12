@@ -4,7 +4,9 @@ import * as chokidar    from 'chokidar';
 import * as fs          from 'fs';
 import * as Path        from 'path';
 import * as Rx          from 'rxjs-es/Rx';
-
+import {Observable} from "rxjs-es";
+import {ParsedPath} from "path";
+import {PageOpened, PagePath} from "./chops";
 
 /*
 RxJS
@@ -27,7 +29,7 @@ RxJS
 *
 * */
 
-function SourceWatcherFabric(globs, options): AnyObj {
+function SourceWatcherFabric(globs, options): Observable<any> {
     return Rx.Observable.create(obs => {
         let watcher = chokidar.watch(globs, options)
             .on('all', (event, path) => {
@@ -54,10 +56,12 @@ function SourceWatcherFabric(globs, options): AnyObj {
 
 function packageFileEvent(event, path, cwd = '.', cb: (DropEvent) => void) {
     let parsedPath = parsePath(path, cwd),
-        data: SourceContent = {
+        data: PageOpened = {
+            type: 'file',
             path: parsedPath,
             id: path,    // for primary key. I'll think about dealing with multiple cwds later.
-            rawContent: undefined
+            rawContent: undefined,
+            yfm: {},
         };
 
     if (event === 'add' || event === 'change') {
@@ -85,29 +89,12 @@ function packageFileEvent(event, path, cwd = '.', cb: (DropEvent) => void) {
 }
 
 /*
- * Returns an object in our standard format: {path, content, meta}
- * Or should we have `source` instead of `path`? For different types of source?`
- */
-function packAChop(path, {encoding = 'UTF-8', cwd='.'}) {
-    // check if the path exists, maybe? oh, oh, chokidar
-    fs.readFile(path, {encoding}, (err, data) => {
-        if (err) throw err;
-
-        return {    // async as fuck
-            content: data,
-            path: parsePath(path, cwd),
-            meta: {}
-        }
-    });
-}
-
-/*
  * Takes a path (and a working dir)
  * returns an object with:
  * - file base (sans extension)
  * - an arr of parent dirs
  * */
-function parsePath(path: string, cwd: string = '.'): ParsedPath {
+function parsePath(path: string, cwd: string = '.'): PagePath {
     let sep = Path.sep,
         {root, dir, base, ext, name} = Path.parse(path),
         rel = Path.relative(cwd, dir),

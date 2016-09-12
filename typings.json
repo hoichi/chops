@@ -1,6 +1,6 @@
 {
   "globalDependencies": {
-    "node": "registry:dt/node#6.0.0+20160815222444"
+    "node": "registry:dt/node#6.0.0+20160909174046"
   },
   "dependencies": {
     "chokidar": "registry:npm/chokidar#1.6.0+20160817083815",
