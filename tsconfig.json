@@ -4,6 +4,7 @@
     "outDir": "build",
     "rootDir": "src",
     "sourceMap": true,
-    "target": "es5"
+    "strictNullChecks": false,  /* should be true, when things like `string | undefined` work */
+    "target": "es2015"
   }
 }

@@ -3,8 +3,8 @@
 import * as chokidar    from 'chokidar';
 import * as fs          from 'fs';
 import * as Path        from 'path';
-import * as Rx          from 'rxjs-es/Rx';
-import {Observable} from "rxjs-es";
+import * as Rx          from '@reactivex/rxjs';
+import {Observable} from "@reactivex/rxjs";
 import {ParsedPath} from "path";
 import {PageOpened, PagePath} from "./chops";
 
@@ -33,7 +33,7 @@ function SourceWatcherFabric(globs, options): Observable<any> {
     return Rx.Observable.create(obs => {
         let watcher = chokidar.watch(globs, options)
             .on('all', (event, path) => {
-                packageFileEvent(
+                packAChop(
                     event, path, options.cwd,
                     chop => obs.onNext(chop)
                 );
@@ -54,7 +54,7 @@ function SourceWatcherFabric(globs, options): Observable<any> {
     //todo: we should probably return a multi-cast observable
 }
 
-function packageFileEvent(event, path, cwd = '.', cb: (DropEvent) => void) {
+function packAChop(event, path, cwd = '.', cb: (ChopEvent) => void) {
     let parsedPath = parsePath(path, cwd),
         data: PageOpened = {
             type: 'file',
@@ -97,7 +97,7 @@ function packageFileEvent(event, path, cwd = '.', cb: (DropEvent) => void) {
 function parsePath(path: string, cwd: string = '.'): PagePath {
     let sep = Path.sep,
         {root, dir, base, ext, name} = Path.parse(path),
-        rel = Path.relative(cwd, dir),
+        rel:string = Path.relative(cwd, dir),
         dirs = rel.split(sep);
 
     return {
@@ -111,5 +111,5 @@ function parsePath(path: string, cwd: string = '.'): PagePath {
 }
 
 
-export default SourceWatcherFabric;
+export {SourceWatcherFabric as watch};
 

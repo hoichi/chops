@@ -6,13 +6,14 @@
  * Mother of all chops
  * */
 interface ChopData {
-    id: number | string;
+    id: ChopId;     // q: or does it belong on a generic `ChopSortable` interface?
 }
+
+type ChopId = number | string;
 
 interface ChopEvent {
     event: string;
-    id: number | string;
-    data?: ChopData;
+    data: ChopData;
 }
 
 /*
@@ -32,14 +33,21 @@ export interface PageOpened extends ChopData {
     type: 'file';   // just in case
     path: PagePath;
     yfm: PageMeta;
-    rawContent: undefined | string;
+    rawContent: string;     // todo: fix `string | undefined`
 }
 
 /*
- *  3. Page after applying all the reducers, added to all the collections,
+ *  3. Page after applying all the reducers, ready to be collected.
+ * */
+/* q: still don’t know whether I should merge meta upon a Page or have a separate meta field as long as possible. It should be merged for a renderer though. */
+interface PageReduced extends PageOpened, PageMeta, PageCollectable {
+}
+
+/*
+ *  4. Page after adding it to all the collections,
  *     its model ripe and ready for rendering.
  * */
-interface PageReady extends PageOpened, PageCollected {
+interface PageCollected extends PageReduced, PageMetaCollected {
 }
 
 /*
@@ -62,7 +70,7 @@ interface TemplateCompiled extends ChopData {
  * A template function for rendering pages
  */
 interface PageRenderer {
-    (page: PageReady, site?: Site, globals?: any): string;
+    (page: PageCollected, site?: Site, globals?: any): string;
 }
 
 /*
@@ -81,17 +89,17 @@ export interface PagePath {
  * Everything we need for collections to work properly.
  * So before we collect, all this data should be ready.
  */
-interface PageCollectable {
+interface PageCollectable extends ChopData {
     slug: string;
     cwd: string;
-    path: string;
+    path: PagePath;
     excerpt: string;
 }
 
 /*
  * after adding the page to [primary] collection
  * */
-interface PageCollected {
+interface PageMetaCollected {
     nextUrl?: string;
     prevUrl?: string;
     collection?: ChopsCollection;
@@ -108,8 +116,8 @@ interface Site {
 interface ChopsCollection {
     sortBy: (el) => boolean | string;
     order: 'asc' | 'desc';
-    sortedList: PageCollected[];   // in
-    dic: Dictionary<PageCollected>;
+    sortedList: PageMetaCollected[];   // in
+    dic: Dictionary<PageMetaCollected>;
 }
 
 interface Dictionary<T> {
