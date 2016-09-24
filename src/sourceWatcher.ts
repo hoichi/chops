@@ -1,4 +1,3 @@
-/// <reference path="../typings/index.d.ts" />
 /// <reference path="chops.d.ts" />
 import * as chokidar    from 'chokidar';
 import * as fs          from 'fs';
@@ -31,20 +30,32 @@ RxJS
 
 function SourceWatcherFabric(globs, options): Observable<any> {
     return Rx.Observable.create(obs => {
-        let watcher = chokidar.watch(globs, options)
+
+        console.log(`Creating an observable. Trying to watch ${globs}`);
+
+        let watcher = chokidar.watch(globs/*, options*/);
+
+        console.dir(watcher.getWatched());
+        console.log(`cwd is: ${process.cwd()}`);
+
+        watcher
             .on('all', (event, path) => {
+
+                console.log(`Processing ${path}`);
+
                 packAChop(
                     event, path, options.cwd,
                     chop => obs.onNext(chop)
                 );
             })
             .on('ready', () => {
+                console.log(`And the first pass is done.`);
                 /* if we’re just building once, call obs.onCompleted()
                 *  if we’re watching, say we’re ready and stay on guard;
                 * */
             })
             .on('error', err => {
-                throw Error(err);
+                throw Error(`Chokidar error: ${err}`);
             })
         ;
 

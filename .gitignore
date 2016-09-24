@@ -39,7 +39,5 @@ node_modules
 lib/
 /build/
 
-# TS definitions from https://github.com/typings/typings
-/typings/
 /.imdone/
-
+/_tmp/

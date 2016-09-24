@@ -1,46 +1,41 @@
-import test from 'ava';
 import {watch} from './sourceWatcher';
 
-var mock = require('mock-fs');
+import test from 'ava';
+import * as chokidar from 'chokidar';
 
-mock({
-    'content': {
-        'index.md':
-`---
-title: Behind the Frontend
-date: 2016-09-22
----
-
-Hello, world!`,
-        'blog': {
-            'day-01':
-`---
-title: Day 1
-date: 2016-09-24
-___
-
-And so, I started to work.`,
-            'day-02':
-`---
-title: Day 2
-date: 2016-09-29
-___
-
-— Okay, back to work.
-— Okay!`
-        }
-    },
+var watcher  = chokidar.watch('test/', {
+    ignored: /[\/\\]\./,
 });
 
-test('Watching the watcher', async (t) => {
-    watch('content/**/*.md', {})
+var log = console.log.bind(console);
+log(`Initial cwd: ${process.cwd()}`);
+process.chdir('D:\\dev\\chops');
+log(`Changed dir to: ${process.cwd()}`);
+
+watcher
+    .on('add', path => log(`File ${path} has been added`))
+    .on('addDir', path => log(`Directory ${path} has been added`))
+    .on('ready', () => log(`Initial scan complete. Ready for changes`))
+;
+
+test('...', t => {
+    console.log('AVA out, bye');
+});
+
+/*
+ test('Watching the watcher', async (t) => {
+    watch('d:/dev/chops', {})
         .subscribe({
             next: page => {
-                console.log(page.path);
+                console.log(`Got a page: ${page.path}`);
             },
-            error: err => {},
-            complete: () => {}
+            error: err => {
+                console.log(`Got an error: ${err}`);
+            },
+            complete: () => {
+                console.log(`We’re done here`);
+            }
         })
-});
-
-mock.restore();
+    ;
+ });
+*/
