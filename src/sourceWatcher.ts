@@ -29,23 +29,21 @@ RxJS
 * */
 
 function SourceWatcherFabric(globs, options): Observable<any> {
-    return Rx.Observable.create(obs => {
-
-        console.log(`Creating an observable. Trying to watch ${globs}`);
-
-        let watcher = chokidar.watch(globs/*, options*/);
-
-        console.dir(watcher.getWatched());
-        console.log(`cwd is: ${process.cwd()}`);
+    return Rx.Observable.create(subscriber => {
+        let watcher = chokidar.watch(globs, options);
 
         watcher
             .on('all', (event, path) => {
+                /* We could use Rx.Observable.fromEvent, but then we’d have
+                *  to create the watcher eagerly.
+                *  Probably won’t matter once we create a multicast.
+                *  Either way, moving on. */
 
-                console.log(`Processing ${path}`);
+                // console.log(`Processing ${path}`);
 
                 packAChop(
                     event, path, options.cwd,
-                    chop => obs.onNext(chop)
+                    chopEvent => subscriber.next(chopEvent)
                 );
             })
             .on('ready', () => {
@@ -120,7 +118,6 @@ function parsePath(path: string, cwd: string = '.'): PagePath {
         rel
     }
 }
-
 
 export {SourceWatcherFabric as watch};
 

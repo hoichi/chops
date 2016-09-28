@@ -1,18 +1,18 @@
 # IN
 
 # NOW
-## sourceWatcher
-- [ ] write tests
-    - [ ] remove ’em dupes 
-    - [ ] read https://medium.com/@benlesh/learning-observable-by-building-observable-d5da57405d87#.y8qxi4jl8 
-    - [x] use `mock-fs`
-- [ ] learn to debug 
+- [ ]  try and write files, hardcodedly, just for the sake of
 
 ## linear proof of concept
 ### phase one:
-- [ ] read files;
-// (read yfm, parse markdown)
-- [ ] emit, observe
+- [x] read files (just `add` so far, emit);
+- [ ] observe
+- [ ] read yfm
+- [ ] emit
+- [ ] observe
+- [ ] parse md
+- [ ] emit
+- [ ] observe
 // (reduce, hardcodedly)
 - [ ] emit, observe
 // (collect)
