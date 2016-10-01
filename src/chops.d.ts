@@ -12,7 +12,7 @@ interface ChopData {
 type ChopId = number | string;
 
 interface ChopEvent {
-    event: string;
+    event: string;  // todo: [string] enum
     data: ChopData;
 }
 

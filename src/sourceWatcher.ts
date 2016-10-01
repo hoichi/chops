@@ -3,9 +3,14 @@ import * as chokidar    from 'chokidar';
 import * as fs          from 'fs';
 import * as Path        from 'path';
 import * as Rx          from '@reactivex/rxjs';
-import {Observable} from "@reactivex/rxjs";
-import {ParsedPath} from "path";
+import {Observable}     from "@reactivex/rxjs";
+import {ParsedPath}     from "path";
 import {PageOpened, PagePath} from "./chops";
+
+// fixme: declare those modules properly
+const   csp = require('js-csp'),
+        fm  = require('front-matter');
+
 
 /*
 RxJS
@@ -28,42 +33,27 @@ RxJS
 *
 * */
 
-function SourceWatcherFabric(globs, options): Observable<any> {
-    return Rx.Observable.create(subscriber => {
-        let watcher = chokidar.watch(globs, options);
+function SourceWatcherFabric(globs, options): any /* fixme: some channel type */ {
+    let ch = csp.chan(),
+        watcher = chokidar.watch(globs, options);   // that's not lazy
 
-        watcher
-            .on('all', (event, path) => {
-                /* We could use Rx.Observable.fromEvent, but then we’d have
-                *  to create the watcher eagerly.
-                *  Probably won’t matter once we create a multicast.
-                *  Either way, moving on. */
+    watcher
+        .on('all', (event, path) => {
+            csp.putAsync(ch, packAChop(event, path, options.cwd));
+        })
+        .on('ready', () => {
+            console.log(`And the first pass is done.`);
+            // todo: ...
+        })
+        .on('error', err => {
+            csp.putAsync(ch, new Error(`Chokidar error: ${err}`));
+        })
+    ;
 
-                // console.log(`Processing ${path}`);
-
-                packAChop(
-                    event, path, options.cwd,
-                    chopEvent => subscriber.next(chopEvent)
-                );
-            })
-            .on('ready', () => {
-                console.log(`And the first pass is done.`);
-                /* if we’re just building once, call obs.onCompleted()
-                *  if we’re watching, say we’re ready and stay on guard;
-                * */
-            })
-            .on('error', err => {
-                throw Error(`Chokidar error: ${err}`);
-            })
-        ;
-
-        return function unsubscribe() {watcher.close()};
-    });
-
-    //todo: we should probably return a multi-cast observable
+    return ch;
 }
 
-function packAChop(event, path, cwd = '.', cb: (ChopEvent) => void) {
+function packAChop(event, path, cwd = '.') {
     let parsedPath = parsePath(path, cwd),
         data: PageOpened = {
             type: 'file',
@@ -74,26 +64,24 @@ function packAChop(event, path, cwd = '.', cb: (ChopEvent) => void) {
         };
 
     if (event === 'add' || event === 'change') {
+        // gather some file data
         try {
-            fs.readFile(path, 'utf-8', (err, rawCont) => {
-                // fixme: always pass _some_ encoding here, but don’t hardcode it
-                data.rawContent = rawCont;
+            // fixme: always pass _some_ encoding here, but don’t hardcode it
+            let rawCont = fs.readFileSync(path, 'utf-8');
 
-                cb({
-                    event: event,
-                    data
-                });
-            });
+            let {attributes: yfm, body: rawContent} = fm(rawCont);
+
+            Object.assign(data, {yfm, rawContent});
         } catch (err) {
             throw Error(`Exception while reading ${path}, error message: ${err.message}`);
         }
     } else if (event === 'unlink') {
-        cb({
-            event: event,
-            data
-        });
-    } else {
-        // todo: reject?
+        // nothing to add to the result
+    }
+
+    return {
+        event,
+        data
     }
 }
 

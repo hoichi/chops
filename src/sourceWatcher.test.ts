@@ -2,6 +2,9 @@ import {watch} from './sourceWatcher';
 
 import test from 'ava';
 import * as chokidar from 'chokidar';
+import {ChopEvent} from "./chops";
+
+const csp = require('js-csp');
 
 // cwd can depend on whether the test is run through Ava or from Node directly
 var log = console.log.bind(console);
@@ -10,20 +13,21 @@ process.chdir('D:\\dev\\chops');
 log(`Changed dir to: ${process.cwd()}`);
 
 
-watch('test/', {})  // ← todo: is it an observable?
-    .subscribe(
-        page => {
-            console.log(`Got a page: ${page.data.path.path}`);
-        },
-        err => {
-            console.log(`Got an error: ${err}`);
-        },
-        () => {
-            console.log(`We’re done here`);
-        }
-    )
-;
+let watchan = watch('test/', {});
 
+csp.go(function *() {
+    let event: ChopEvent,
+        done = false;
+
+    while (!done) {
+        try {
+            event = yield csp.take(watchan);``
+            console.log(`event.id = "${event.data.id}"`);
+        } catch (err) {
+            throw err;
+        }
+    }
+});
 
 
 /*
