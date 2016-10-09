@@ -1,8 +1,7 @@
-import {watch} from './sourceWatcher';
+import {SourceWatcherFabric} from './fsWatcher';
 
 import test from 'ava';
-import * as chokidar from 'chokidar';
-import {ChopEvent} from "./chops";
+import {ChopEvent, PageOpened} from "./chops";
 
 const csp = require('js-csp');
 
@@ -13,15 +12,15 @@ process.chdir('D:\\dev\\chops');
 log(`Changed dir to: ${process.cwd()}`);
 
 
-let watchan = watch('test/', {});
+let watchan = SourceWatcherFabric('test/', {});
 
 csp.go(function *() {
-    let event: ChopEvent,
+    let event: ChopEvent<PageOpened>,
         done = false;
 
     while (!done) {
         try {
-            event = yield csp.take(watchan);``
+            event = yield csp.take(watchan);
             console.log(`event.id = "${event.data.id}"`);
         } catch (err) {
             throw err;

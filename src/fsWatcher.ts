@@ -2,38 +2,18 @@
 import * as chokidar    from 'chokidar';
 import * as fs          from 'fs';
 import * as Path        from 'path';
-import * as Rx          from '@reactivex/rxjs';
-import {Observable}     from "@reactivex/rxjs";
-import {ParsedPath}     from "path";
-import {PageOpened, PagePath} from "./chops";
+import {
+    PageOpened,
+    PagePath, PageRendered
+}       from "./chops";
+import {FsWriter}       from './fsWriter'
 
 // fixme: declare those modules properly
 const   csp = require('js-csp'),
         fm  = require('front-matter');
 
 
-/*
-RxJS
-- http://reactivex.io/rxjs/manual/overview.html#anatomy-of-an-observable`
-- http://xgrommx.github.io/rx-book/content/guidelines/introduction/index.html#request-and-response
-*/
-
-/*
-* .src() eats globs, rounds up the files and spits out their contents, together with path info.
-*   - it provides bare file contents together with path info
-*   - it should somehow understand partials and dependencies on ’em
-*   - it should come before yfm parsing or template compilations, because it’s agnostic of all this.
-*       so no `template().src()`
-*
-* what should it return? something very chainable. the mystery chop should:
-* - watch globs (so have a chokidar watcher inside)
-* - stream collections, transform collections, return more collections
-* - channel site settings (that’s an advanced topic though)
-* - do it all lazily (iterators? aren’t they kinda pull?)
-*
-* */
-
-function SourceWatcherFabric(globs, options): any /* fixme: some channel type */ {
+export function SourceWatcherFabric(globs, options = {encoding: 'UTF-8', cwd: '.'}): any /* fixme: some channel type */ {
     let ch = csp.chan(),
         watcher = chokidar.watch(globs, options);   // that's not lazy
 
@@ -50,16 +30,16 @@ function SourceWatcherFabric(globs, options): any /* fixme: some channel type */
         })
     ;
 
-    return ch;
+    return new FsWriter(ch);
 }
 
 function packAChop(event, path, cwd = '.') {
     let parsedPath = parsePath(path, cwd),
-        data: PageOpened = {
+        page: PageOpened = {
             type: 'file',
             path: parsedPath,
             id: path,    // for primary key. I'll think about dealing with multiple cwds later.
-            rawContent: undefined,
+            content: undefined,
             yfm: {},
         };
 
@@ -71,7 +51,7 @@ function packAChop(event, path, cwd = '.') {
 
             let {attributes: yfm, body: rawContent} = fm(rawCont);
 
-            Object.assign(data, {yfm, rawContent});
+            Object.assign(page, {yfm, rawContent});
         } catch (err) {
             throw Error(`Exception while reading ${path}, error message: ${err.message}`);
         }
@@ -79,9 +59,18 @@ function packAChop(event, path, cwd = '.') {
         // nothing to add to the result
     }
 
+    // fixme: so hack. much temporary
+    // I mean, PageRendered (or PageWritable, or something) shouldn’t be emitted from here
+    let aPageAheadOfItsTime: PageRendered = {
+        id:     page.id,
+        url:    Path.join(page.path.rel, 'index.html'),
+        html:   page.content
+    };
+
     return {
         event,
-        data
+        data: aPageAheadOfItsTime
+        // page
     }
 }
 
@@ -106,6 +95,4 @@ function parsePath(path: string, cwd: string = '.'): PagePath {
         rel
     }
 }
-
-export {SourceWatcherFabric as watch};
 

@@ -11,9 +11,9 @@ interface ChopData {
 
 type ChopId = number | string;
 
-interface ChopEvent {
-    event: string;  // todo: [string] enum
-    data: ChopData;
+interface ChopEvent<T extends ChopData> {
+    type: string;  // todo: [string] enum
+    data: T;
 }
 
 /*
@@ -21,7 +21,7 @@ interface ChopEvent {
  * */
 
 /*
- *  1. As a mere chokidar event.
+ *  1. As a mere chokidar type.
  *     Current implementation doesn’t need any types though.
  */
 
@@ -33,7 +33,7 @@ export interface PageOpened extends ChopData {
     type: 'file';   // just in case
     path: PagePath;
     yfm: PageMeta;
-    rawContent: string;     // todo: fix `string | undefined`
+    content: string;     // todo: fix `string | undefined`
 }
 
 /*
@@ -53,9 +53,9 @@ interface PageCollected extends PageReduced, PageMetaCollected {
 /*
  * 4. Page have met its template, is rendered and ready to be written.
  * */
-interface PageRendered {
+interface PageRendered extends ChopData /* at least */ {
     html: string;
-    dest: string;
+    url: string;
 }
 
 /*
