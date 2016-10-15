@@ -106,6 +106,10 @@ interface PageMetaCollected {
 }
 
 interface PageMeta {
+    // We have defaults for everything
+    title?: string;
+    template?: string;
+    published?: boolean;
     [k: string]: any;
 }
 

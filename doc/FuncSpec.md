@@ -43,7 +43,7 @@ How about:
             .collect(collection1)  // Or vice versa. This (←) way means collections are already created, which might be ok.
             .collect(collection2)
             .render(templates[`basicpage`])
-        dest(/* path/callback. the latter takes the meta and returns the path */);
+        write(/* path/callback. the latter takes the meta and returns the path */);
 ```
 
 Or:
@@ -60,7 +60,7 @@ Collections:
 collection1 = chops
                 .collection({/*config*/})
                 .paginate()  /* is pagination a model concern or a template concern? what would Jekyll do? */
-                .dest(/* path */); /* Maybe not much use for callback because there's no source meta this callback should process. Still we have to check if the dest. path is present for both pages and collections */
+                .write(/* path */); /* Maybe not much use for callback because there's no source meta this callback should process. Still we have to check if the dest. path is present for both pages and collections */
 ```
 
 ## IN

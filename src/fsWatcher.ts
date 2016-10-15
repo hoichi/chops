@@ -6,16 +6,22 @@ import {
     PageOpened,
     PagePath, PageRendered
 }       from "./chops";
-import {FsWriter}       from './fsWriter'
+import {FsWriter}       from './fsWriter';
+import {ChoppingBoard}  from './choppingBoard';
 
 // fixme: declare those modules properly
 const   csp = require('js-csp'),
         fm  = require('front-matter');
 
 
-export function SourceWatcherFabric(globs, options = {encoding: 'UTF-8', cwd: '.'}): any /* fixme: some channel type */ {
+export function SourceWatcherFabric(globs, options = {cwd: '.'}): any /* fixme: channel type */ {
     let ch = csp.chan(),
         watcher = chokidar.watch(globs, options);   // that's not lazy
+
+    /* todo:
+     * - options defaults
+     * - an option to add pre-asterisk part of the globs to the cwd. or am I outsmarting `fs.watch()`, `node-glob` et. al?
+     * */
 
     watcher
         .on('all', (event, path) => {
@@ -30,7 +36,7 @@ export function SourceWatcherFabric(globs, options = {encoding: 'UTF-8', cwd: '.
         })
     ;
 
-    return new FsWriter(ch);
+    return new ChoppingBoard(ch);
 }
 
 function packAChop(event, path, cwd = '.') {

@@ -28,6 +28,7 @@
     "front-matter": "^2.1.0",
     "js-csp": "^0.7.3",
     "lodash": "^4.16.1",
+    "mkpath": "^1.0.0",
     "rxjs-es": "^5.0.0-beta.12"
   },
   "devDependencies": {

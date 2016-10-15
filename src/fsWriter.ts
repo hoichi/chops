@@ -1,5 +1,6 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs      from 'fs';
+import * as md      from 'mkpath';
+import * as path    from 'path';
 import {PageRendered, ChopEvent} from "./chops";
 
 const
@@ -9,11 +10,11 @@ const
 
 export class FsWriter {
     protected chIn;
-    constructor(chIn: any) {
+    constructor(chIn: any, dir: string) {
         this.chIn = chIn;
     }
 
-    dest(dir: string): void {
+    write(dir: string): void {
         let chIn = this.chIn;
 
         go(function *() {
@@ -23,11 +24,26 @@ export class FsWriter {
                     && !(event instanceof Error) ) {     // ← do we even get here if we throw?
                 let page = event.data;  // todo: check event.type
 
-                fs.writeFileSync(   // *Sync so we don’t try to write to the file we’re writing to already.
-                    path.resolve(dir, page.url),
-                    page.html,
-                    {encoding: 'UTF-8'}
-                );
+                try {
+                    fs.writeFileSync(   // *Sync so we don’t try to write to the file we’re writing to already.
+                        path.resolve(dir, page.url),
+                        page.html,
+                        {encoding: 'UTF-8'}
+                    );
+                } catch (err) {
+                    if (err.message.includes('ENOENT')) {
+                        md.sync(path.resolve(dir, path.dirname(page.url)));
+
+                        // fixme: make it less wet
+                        fs.writeFileSync(
+                            path.resolve(dir, page.url),
+                            page.html,
+                            {encoding: 'UTF-8'}
+                        );
+                    } else {
+                        throw err;
+                    }
+                }
             }
         });
     }

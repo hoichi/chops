@@ -7,13 +7,14 @@
     - [ ] when you do `.src('contents/')`, paths are not relative to `contents/`;
         - [ ] by the by, options defaults would fail if we’d actually pass something; 
     - [ ] dirs are not auto-created (use `mkdirp`);
+        - [ ] and we just let `fs` throw when we cannot create a file inside a non-existent dir 
     - [ ] we don’t discern between dir events and file events from chokidar;
   
 - [ ] make it work
     - [ ] run default transformers
         - _put opinionated hardcode in one place_
     - [ ] csp.put()
-    - [x] `dest() {csp.take(); fs.writeFile();}`
+    - [x] `write() {csp.take(); fs.writeFile();}`
 
 ### make it useful
 - [ ] templates
@@ -37,7 +38,7 @@
     - [ ] send `ready` from chokidar down the line (and send the number of files — or the whole fucking tree with it
     - [ ] wait for collections to fill up before emitting (or at least sanctioning) anything down the line. Maybe even `prev/next` setting should be lazy, so we shouldn’t emit `PageCollected`s before collection is go.
 - [ ] watch for template partials
-- [ ] optimize the `src().dest()` case (plain `cp`)
+- [ ] optimize the `src().write()` case (plain `cp`)
 
 ### put it out
 - [ ] publish typings for js-csp

@@ -102,7 +102,7 @@ chops.src('content/**/*.md')
             return [];
     })
     .render(meta => meta.category === 'blog' ? templates['blog'] : templates['single'])
-.dest('build/');
+.write('build/');
 ```
 
 ### Data Flow
