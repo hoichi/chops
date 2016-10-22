@@ -2,19 +2,8 @@
 
 # NOW
 ### proof of concept
-- [x] create a test build script
 - [ ] FIX:
-    - [ ] when you do `.src('contents/')`, paths are not relative to `contents/`;
-        - [ ] by the by, options defaults would fail if we’d actually pass something; 
-    - [ ] dirs are not auto-created (use `mkdirp`);
-        - [ ] and we just let `fs` throw when we cannot create a file inside a non-existent dir 
-    - [ ] we don’t discern between dir events and file events from chokidar;
-  
-- [ ] make it work
-    - [ ] run default transformers
-        - _put opinionated hardcode in one place_
-    - [ ] csp.put()
-    - [x] `write() {csp.take(); fs.writeFile();}`
+    - [ ] `contents/` gets added to url 
 
 ### make it useful
 - [ ] templates

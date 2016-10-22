@@ -23,7 +23,7 @@ todo: page.categories
  The list of categories to which this post belongs. Categories are derived from the directory structure above the _posts directory. For example, a post at /work/code/_posts/2008-12-24-closures.md would have this field set to ['work', 'code']. These can also be specified in the YAML Front Matter.
 
  todo: page.path
- The path to the raw post or page. Exampl`e usage: Linking back to the page or post’s source on GitHub. This can be overridden in the YAML Front Matter.
+ The path to the content post or page. Exampl`e usage: Linking back to the page or post’s source on GitHub. This can be overridden in the YAML Front Matter.
  */
 
 let cfg = {

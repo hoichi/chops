@@ -1,7 +1,7 @@
 import {SourceWatcherFabric} from './fsWatcher';
 
 import test from 'ava';
-import {ChopEvent, PageOpened} from "./chops";
+import {ChopEvent, ChopPage} from "./chops";
 
 const csp = require('js-csp');
 
@@ -15,7 +15,7 @@ log(`Changed dir to: ${process.cwd()}`);
 let watchan = SourceWatcherFabric('test/', {});
 
 csp.go(function *() {
-    let event: ChopEvent<PageOpened>,
+    let event: ChopEvent<ChopPage>,
         done = false;
 
     while (!done) {
