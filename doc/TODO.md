@@ -1,10 +1,6 @@
 # IN
 
 # NOW
-### proof of concept
-- [ ] FIX:
-    - [ ] `contents/` gets added to url 
-
 ### make it useful
 - [ ] templates
     - [ ] watch

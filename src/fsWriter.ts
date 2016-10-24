@@ -1,5 +1,5 @@
 import * as fs      from 'fs';
-import * as md      from 'mkpath';
+import * as mkpath  from 'mkpath';
 import * as path    from 'path';
 
 import {ChopEvent, ChopPage} from "./chops";
@@ -29,6 +29,7 @@ export class FsWriter {
 
                 l(event.data);
                 try {
+                    l(`page: %o`, page);
                     fs.writeFileSync(   // *Sync so we don’t try to write to the file we’re writing to already.
                         path.resolve(dir, page.url),
                         page.content,
@@ -36,8 +37,9 @@ export class FsWriter {
                     );
                 } catch (err) {
                     if (err.message.includes('ENOENT')) {
-                        md.sync(path.resolve(dir, path.dirname(page.url)));
+                        mkpath.sync(path.resolve(dir, path.dirname(page.url)));
 
+                        l(`content: ${page.content}`);
                         // fixme: make it less wet
                         fs.writeFileSync(
                             path.resolve(dir, page.url),

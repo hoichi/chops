@@ -54,7 +54,6 @@ export interface PagePath {
     ext: string;
     name: string;
     path: string;
-    rel: string;
 }
 
 /*

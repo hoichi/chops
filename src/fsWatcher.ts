@@ -44,22 +44,27 @@ export function SourceWatcherFabric(globs, options?: any): any /* fixme: channel
 }
 
 function packAChop(event, path, cwd = '.'): ChopEvent<ChopPage> {
-    let parsedPath = parsePath(path, cwd),
+    let parsedPath = parsePath(path),
         page: ChopPage = {
             type: 'file',
             path: parsedPath,
-            id: path,    // for primary key. I'll think about dealing with multiple cwds later.
+            id: path,       // for primary key. I'll think about dealing with multiple cwds later.
             content: '',
-            url: 'unnamed/index.md'
+            url: ''         // fixme: do we need that value here at all?
+                            // it bitten me in the ass with the default.
+                            // also, does a source watcher really needs
+                            // to know of those things?
         };
 
     if (event === 'add' || event === 'change') {
+        let xCwd = process.cwd();
         // gather some file data
         try {
             // fixme: always pass _some_ encoding here, but don’t hardcode it
+            process.chdir(cwd);
             page.content = fs.readFileSync(path, 'utf-8');
-        } catch (err) {
-            throw Error(`Exception while reading ${path}, error message: ${err.message}`);
+        } finally {
+            process.chdir(xCwd);
         }
     } else if (event === 'unlink') {
         // nothing to add to the result
@@ -77,18 +82,16 @@ function packAChop(event, path, cwd = '.'): ChopEvent<ChopPage> {
  * - file base (sans extension)
  * - an arr of parent dirs
  * */
-function parsePath(path: string, cwd: string = '.'): PagePath {
+function parsePath(path: string): PagePath {
     let sep = Path.sep,
         {dir, ext, name} = Path.parse(path),
-        rel:string = Path.relative(cwd, dir),
-        dirs = rel.split(sep);
+        dirs = dir.split(sep);
 
     return {
         dir,
         dirs,
         ext,
         name,
-        path,
-        rel
-    }
+        path
+    };
 }
