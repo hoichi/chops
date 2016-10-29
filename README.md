@@ -9,13 +9,13 @@ The lean mean static... builder... thing. NOT ready for production. Or for showi
  let collections = {
     blog: chops.collection()
         .order('created_at', 'desc')
-        .render(templates['blog'])
+        .render(templates.get('blog'))
         .dest('blog/index.html')
     ,
     rss: chops.collection()
         .order('created_at', 'desc')
         .first(10)
-        .render(templates['rss'])
+        .render(templates.get('rss'))
         .dest('feed.xml')
     };
 
@@ -27,7 +27,7 @@ The lean mean static... builder... thing. NOT ready for production. Or for showi
             collections.blog,
             collections.rss
         ])
-        .render(templates['single'])
+        .render(templates.get('single'))
     .dest('blog/');
 
     site.src('...')
@@ -41,7 +41,7 @@ The lean mean static... builder... thing. NOT ready for production. Or for showi
             }
         )
         .collect(coll['blog'])
-        .render(jade['post'])
+        .render(templates['post'])
     .dest();
 ```
 

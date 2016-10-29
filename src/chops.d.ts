@@ -29,20 +29,8 @@ export interface ChopPage extends ChopData, ChopPageWritable {
     content: string;     // todo: fix `string | undefined`
 }
 
-
-/*
- * A template file (as a chop).
- * */
-interface TemplateCompiled extends ChopData {
-    render: PageRenderer;
-    // q: do we need anything from ChopPage? path, maybe?
-}
-
-/*
- * A template function for rendering pages
- */
-interface PageRenderer {
-    (page: ChopPage, site?: Site, globals?: any): string;
+export interface Blah{
+    site: Site;
 }
 
 /*
@@ -87,7 +75,7 @@ interface PageMetaCollected {
 }
 
 
-interface Site {
+interface ChopSite {
     [k: string]: any;
 }
 

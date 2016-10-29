@@ -1,0 +1,20 @@
+doctype xml
+rss(version='2.0', xmlns:atom='http://www.w3.org/2005/Atom')
+    channel
+        title= site.title
+        link https://#{site.domain}
+        atom:link(href='//'+site.domain+'/feed' rel='self', type='application/rss+xml')
+        description I write as I learn as I go. Frontend development, mostly.
+        language en-US
+        if posts.length
+            lastBuildDate= posts[0].date.toUTCString()
+        - each post in posts
+            item
+                title= post.title
+                link https://#{site.domain}/blog/#{post.slug}
+                description
+                    | <![CDATA[
+                    | !{post.content}
+                    | ]]>
+                pubDate= post.date.toUTCString()
+                guid(isPermaLink='false') https://#{site.domain}/blog/#{post.slug}
