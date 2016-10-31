@@ -7,5 +7,9 @@
     "strictNullChecks": false,  /* should be true, when things like `string | undefined` work */
     "experimentalDecorators": true,
     "target": "es2015"
-  }
+  },
+  "exclude": [
+    "node_modules",
+    "_tmp"
+  ]
 }

@@ -8,7 +8,7 @@ rss(version='2.0', xmlns:atom='http://www.w3.org/2005/Atom')
         language en-US
         if posts.length
             lastBuildDate= posts[0].date.toUTCString()
-        - each post in posts
+        each post in posts
             item
                 title= post.title
                 link https://#{site.domain}/blog/#{post.slug}

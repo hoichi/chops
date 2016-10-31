@@ -29,10 +29,6 @@ export interface ChopPage extends ChopData, ChopPageWritable {
     content: string;     // todo: fix `string | undefined`
 }
 
-export interface Blah{
-    site: Site;
-}
-
 /*
  * Source file path, parsed and ready for any reducing user might request
  * */

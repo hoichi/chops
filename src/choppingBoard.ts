@@ -7,7 +7,7 @@ import {ChopEvent, ChopPage, ChopData} from "./chops";
 import {Convertable} from './convertable';
 import {FsWriter} from './fsWriter';
 import {ChopRenderer} from './renderer';
-import {chan, go, put, take} from 'js-csp';
+import {Channel, chan, go, put, take} from 'js-csp';
 import * as csp from 'js-csp';
 import {isString} from 'lodash/fp';
 
@@ -19,12 +19,16 @@ interface TemplateNameCb {
 
 export class ChoppingBoard<T extends ChopData> extends Convertable {
     // fixme: maybe Convertable is better off as a decorator
-    private chOut: any;
+    private _chOut: Channel;
 
-    constructor(private chIn: any) {
+    constructor(private _chIn: Channel) {
         super();
 
-        this.chOut = chan();
+        this._chOut = chan();
+    }
+
+    get chOut() {
+        return this._chOut;
     }
 
     render(templates: ChoppingBoard<ChopPage>, tplName: string | TemplateNameCb) {
@@ -34,31 +38,31 @@ export class ChoppingBoard<T extends ChopData> extends Convertable {
          * Does CSP offer filtering out of the box? [Sure does](https://github.com/ubolonton/js-csp/blob/master/doc/advanced.md#filterfromp-ch-bufferorn)
          */
 
-        // todo: check if it’s the right type of board (maybe _not_ ChopPage)
+        // todo: check if it’s the right type of board (what if it’s not a ChopPage?)
         // todo: this method is for pages/collections, not for, say, templates
 
-        if (!isString(tplName)) {
-            tplName = tplName(page);    // this should run on chops, not on boards
-        }
+        const renderer = new ChopRenderer(templates.chOut, this._chOut, tplName);
+        templates.startTransmitting();
+        this.startTransmitting();
 
-        const renderer = new ChopRenderer
+        return renderer;
     }
 
     write(dir: string) {
         l(`Writing to %s`, dir);
-        const writer = new FsWriter(this.chOut, dir);
-        this.lockConverters();
+        const writer = new FsWriter(this._chOut, dir);
         this.startTransmitting();
 
         return writer;
     }
 
-    private startTransmitting() {   // q: do we need stopTransmitting? or some cleanup at all?
-        let event: ChopEvent<T>,
-            me = this;
+    startTransmitting() {   // q: do we need stopTransmitting? or some cleanup at all?
+        this.lockConverters();
 
-        go(function *() {
-            while ( (event = yield take(me.chIn))  !==  csp.CLOSED ) {
+        go(function *(me) {
+            let event: ChopEvent<T>;
+
+            while ( (event = yield take(me._chIn))  !==  csp.CLOSED ) {
                 let {type, data} = event;
                 // todo: check for event type
                 let eventOut = {
@@ -66,11 +70,10 @@ export class ChoppingBoard<T extends ChopData> extends Convertable {
                     data: me.runConverters(data)
                 };
 
-                // l(`Original: ${event.data.content}`);
-                // l(`Convered: `, eventOut.data);
-                yield put(me.chOut, eventOut);
+                // l(`Sending data: %o`, event.data);
+                yield put(me._chOut, eventOut);
             }
-        });
+        }, [this]);
     }
 }
 

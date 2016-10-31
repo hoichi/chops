@@ -7,8 +7,11 @@ var chops   = require('../build/index'),
 
 var templates = chops
     .src('theme/jade/*.jade')
-    .convert(tpl => pug.compile(tpl.content,    { pretty: '\t'
-                                                ,filename: tpl.path.path}))
+    .convert( tpl =>    Object.assign({}, {
+                            id: tpl.path.name,
+                            render: pug.compile(tpl.content,    { pretty: '\t'
+                                                                , filename: tpl.path.path})
+                        }) )
 ;
 
 chops

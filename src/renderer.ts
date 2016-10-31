@@ -1,9 +1,14 @@
+///<reference path="chops.d.ts"/>
 /**
  * Created by hoichi on 29.10.2016.
  */
-import {Channel, alts, chan, go, put, take} from "js-csp";
-import * as csp from "js-csp";
-import {ChopData, ChopPage, ChopSite, Dictionary} from "./chops";
+import {Channel, alts, chan, go, put, take} from 'js-csp';
+import * as csp                             from 'js-csp';
+import {isString}                           from 'lodash/fp';
+
+import {ChopData, ChopPage, ChopSite, Dictionary, ChopEvent}   from "./chops";
+import l                                            from './log';
+import {FsWriter} from "./fsWriter";
 
 /*
  * A template file (as a chop).
@@ -20,6 +25,10 @@ export interface PageRenderer {
     (page: ChopPage, site?: ChopSite, globals?: Dictionary<any>): string;
 }
 
+export interface StringExtractor {
+    (page: ChopPage): string;
+}
+
 interface TemplateSubscription {
     chTpl: Channel;
     chRefresh: Channel;
@@ -27,44 +36,61 @@ interface TemplateSubscription {
 }
 
 export class ChopRenderer {
-    private chOut: Channel = chan();
-    private tplPub;
-    private tplSubscribers: Dictionary<TemplateSubscription> = Object.create(null);
+    private _chOut: Channel = chan();
+    private _tplPub;
+    private _tplSubscribers: Dictionary<TemplateSubscription> = Object.create(null);
+    private _tplNameExtractor: (page: ChopPage) => string | string;
 
-    constructor ( private chTemplates: Channel
-                , private chContent: Channel
-                , private tplNameExtractor: (page: ChopPage) => string ) {
-        this.tplPub = csp.operations.pub(chTemplates, tpl => tpl.id);
-        this.startRendering()
+    constructor ( private _chTemplates: Channel
+                , private _chContent: Channel
+                , tplNameOrExtractor: string | StringExtractor) {
+
+        this._tplNameExtractor = isString(tplNameOrExtractor)
+            ? () => tplNameOrExtractor
+            : tplNameOrExtractor
+        ;
+        // todo: runtime check for a function
+
+        l('Publishing template channels by id');
+        this._tplPub = csp.operations.pub(_chTemplates, tpl => tpl.id);
+
+        l('Now hark!');
+        this.listenForTemplates();
+        this.listenForPages();
     }
 
-    startRendering() {
-        this.listenToTemplates();
-        this.listenToPages();
+    write(dir: string) {
+        l(`Writing to %s`, dir);
+        return new FsWriter(this._chOut, dir);
     }
 
-    private listenToTemplates() {
+    private listenForTemplates() {
         go(function *(me) {
-            let template: TemplateCompiled;
+            let tplEvent: ChopEvent<TemplateCompiled>,
+                template: TemplateCompiled;
 
-            while ( (template = yield take(me.chTemplates)) !== csp.CLOSED ) {
+            l(`Listening for templates`);
+            while ( (tplEvent = yield take(me._chTemplates)) !== csp.CLOSED ) {
                 // todo: dedupe?
-                let subscription: TemplateSubscription = me.addTplSubscription(template.id),
-                    pages = subscription.pages;
+                template = tplEvent.data;
+                l(`  I hear a template "${template.id}"`);
+                let subscription = me.addTplSubscription(template.id);
 
                 yield put(subscription.chRefresh, true);    /* maybe put it inside of reApplyTemplate? */
-                this.reApplyTemplate(template, subscription);
+                me.reApplyTemplate(template, subscription);
             }
-        }, this);
+        }, [this]);
     }
 
     private reApplyTemplate(template: TemplateCompiled,
                             {pages, chRefresh}: TemplateSubscription ) {
         go(function *(me) {
             for (let key in pages) {
+                l(`RRRRRendering a page "${key}"`);
+                console.dir(pages[key]);
                 let res = yield alts([
                     chRefresh,
-                    [me.chOut, template.render(pages[key])]
+                    [me._chOut, template.render(pages[key])]
                 ], {priority: true});
 
                 if (res.channel === chRefresh) break;   /*  or should we check for a value?
@@ -72,40 +98,42 @@ export class ChopRenderer {
             }
 
             return;
-        }, this);
+        }, [this]);
     }
 
-    private listenToPages() {
+    private listenForPages() {
         go(function *(me) {
-            let page: ChopPage,
+            let pageEvent: ChopEvent<ChopPage>,
+                page,
                 tplName: string,
                 tplSub: TemplateSubscription,
                 template: TemplateCompiled;
 
-            while ( (page = yield take(me.chContent)) !== csp.CLOSED ) {
+            while ( (pageEvent = yield take(me._chContent)) !== csp.CLOSED ) {
                 // get a tpl channel (or create a new one)
-                tplName = me.tplNameExtractor(page);
+                page = pageEvent.data;
+                tplName = me._tplNameExtractor(page);
                 tplSub = me.addTplSubscription(tplName, page);
 
                 // take a template itself (or wait for it) and render the page
                 template = yield take(tplSub.chTpl);
-                yield put(me.chOut, template.render(page));
+                yield put(me._chOut, template.render(page));
             }
-        }, this);
+        }, [this]);
     }
 
-    private addTplSubscription(topic: string, page?: ChopPage) {
-        const {tplSubscribers, tplPub} = this;
-        let subscription: TemplateSubscription = tplSubscribers[topic];
+    private addTplSubscription(topic: string, page?: ChopPage): TemplateSubscription {
+        const {_tplSubscribers, _tplPub} = this;
+        let subscription = _tplSubscribers[topic];
 
         if (!subscription) {
             // add a new template subscription
-            tplSubscribers[topic] = subscription = {
+            _tplSubscribers[topic] = subscription = {
                 chTpl: chan(csp.buffers.sliding(1)),
                 pages: Object.create(null),
                 chRefresh: chan(1)
             };
-            csp.operations.pub.sub(tplPub, topic, subscription.chTpl);
+            csp.operations.pub.sub(_tplPub, topic, subscription.chTpl);
         }
 
         page &&
