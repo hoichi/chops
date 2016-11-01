@@ -70,10 +70,14 @@ export class ChoppingBoard<T extends ChopData> extends Convertable {
                     data: me.runConverters(data)
                 };
 
-                // l(`Sending data: %o`, event.data);
+                l(`ch-ch-choppingBoard transmitting "${event.type}" for id "${event.data.id}"`);
                 yield put(me._chOut, eventOut);
             }
         }, [this]);
+
+        go(function *(me) {
+            // l(yield take(this._chOut));
+        }.bind(this));
     }
 }
 

@@ -22,7 +22,12 @@ export interface TemplateCompiled extends ChopData {
  * A template function for rendering pages
  */
 export interface PageRenderer {
-    (page: ChopPage, site?: ChopSite, globals?: Dictionary<any>): string;
+    (data: PageRendererData): string;
+}
+
+export interface PageRendererData {
+    page: ChopPage;
+    [k: string]: any;
 }
 
 export interface StringExtractor {
@@ -51,8 +56,8 @@ export class ChopRenderer {
         ;
         // todo: runtime check for a function
 
-        l('Publishing template channels by id');
-        this._tplPub = csp.operations.pub(_chTemplates, tpl => tpl.id);
+        // l('Publishing template channels by id');
+        // this._tplPub = csp.operations.pub(_chTemplates, tpl => tpl.id);
 
         l('Now hark!');
         this.listenForTemplates();
@@ -65,21 +70,20 @@ export class ChopRenderer {
     }
 
     private listenForTemplates() {
-        go(function *(me) {
+        go(function *() {
             let tplEvent: ChopEvent<TemplateCompiled>,
                 template: TemplateCompiled;
 
             l(`Listening for templates`);
-            while ( (tplEvent = yield take(me._chTemplates)) !== csp.CLOSED ) {
+            while ( (tplEvent = yield take(this._chTemplates)) !== csp.CLOSED ) {
                 // todo: dedupe?
                 template = tplEvent.data;
                 l(`  I hear a template "${template.id}"`);
-                let subscription = me.addTplSubscription(template.id);
-
-                yield put(subscription.chRefresh, true);    /* maybe put it inside of reApplyTemplate? */
-                me.reApplyTemplate(template, subscription);
+                let subscription = this.addTplSubscription(template.id);
+                yield put(subscription.chTpl, template);
+                this.reApplyTemplate(template, subscription);   // q: race condition anyone?`
             }
-        }, [this]);
+        }.bind(this));
     }
 
     private reApplyTemplate(template: TemplateCompiled,
@@ -87,12 +91,13 @@ export class ChopRenderer {
         go(function *(me) {
             for (let key in pages) {
                 l(`RRRRRendering a page "${key}"`);
-                console.dir(pages[key]);
-                let res = yield alts([
-                    chRefresh,
-                    [me._chOut, template.render(pages[key])]
-                ], {priority: true});
+                let pageRendered = me.applySingleTemplate(template, {page: pages[key]}),
+                    res = yield alts([
+                        chRefresh,
+                        [me._chOut, pageRendered]
+                    ], {priority: true});
 
+                l(`pageRendered.url while reapplying template = ${pageRendered.url}`);
                 if (res.channel === chRefresh) break;   /*  or should we check for a value?
                                                             right now we just put `true` there */
             }
@@ -114,12 +119,24 @@ export class ChopRenderer {
                 page = pageEvent.data;
                 tplName = me._tplNameExtractor(page);
                 tplSub = me.addTplSubscription(tplName, page);
+                // todo: error by timeout if template never comes`
 
                 // take a template itself (or wait for it) and render the page
                 template = yield take(tplSub.chTpl);
-                yield put(me._chOut, template.render(page));
+                let pageRendered = me.applySingleTemplate(template, {page});
+                l(`pageRendered.url = ${pageRendered.url}`);``
+                yield put(me._chOut, pageRendered);
             }
         }, [this]);
+    }
+
+    private applySingleTemplate(template: TemplateCompiled, data: PageRendererData): ChopEvent<ChopPage> {
+        // todo: make it a pure function. and maybe separate rendering from data flow
+        // console.dir(data);
+        return {
+            type: 'add',    //fixme
+            data: Object.assign({}, data.page, template.render(data))
+        };``
     }
 
     private addTplSubscription(topic: string, page?: ChopPage): TemplateSubscription {
@@ -133,7 +150,7 @@ export class ChopRenderer {
                 pages: Object.create(null),
                 chRefresh: chan(1)
             };
-            csp.operations.pub.sub(_tplPub, topic, subscription.chTpl);
+            // csp.operations.pub.sub(_tplPub, topic, subscription.chTpl);
         }
 
         page &&

@@ -1,23 +1,19 @@
-import * as fs      from 'fs';
-import * as mkpath  from 'mkpath';
-import * as path    from 'path';
+import * as fs              from 'fs';
+import * as mkpath          from 'mkpath';
+import * as path            from 'path';
+import * as csp             from 'js-csp';
+import {Channel, go, take}  from 'js-csp';
 
 import {ChopEvent, ChopPage} from "./chops";
 import l            from './log';
 
-const
-    csp = require('js-csp'),
-    {go, take} = csp
-;
-
 export class FsWriter {
-    constructor(private chIn: any, private dir: string) {
+    constructor(private chIn: Channel, private dir: string) {
         this.startWriting();
     }
 
     startWriting(): void {
-        let chIn = this.chIn,
-            dir = this.dir;
+        let {chIn, dir} = this;
 
         l(`Roger: writing to "${dir}"`);
         go(function *() {
@@ -27,7 +23,7 @@ export class FsWriter {
                     && !(event instanceof Error) ) {     // ← do we even get here if we throw?
                 let page = event.data;  // todo: check event.type
 
-                l(event.data);
+                l(event);
                 try {
                     l(`page: %o`, page);
                     fs.writeFileSync(   // *Sync so we don’t try to write to the file we’re writing to already.
