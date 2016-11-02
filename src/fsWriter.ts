@@ -23,9 +23,9 @@ export class FsWriter {
                     && !(event instanceof Error) ) {     // ← do we even get here if we throw?
                 let page = event.data;  // todo: check event.type
 
-                l(event);
+                // l(event);
                 try {
-                    l(`page: %o`, page);
+                    // l(`page: %o`, page);
                     fs.writeFileSync(   // *Sync so we don’t try to write to the file we’re writing to already.
                         path.resolve(dir, page.url),
                         page.content,
@@ -35,7 +35,7 @@ export class FsWriter {
                     if (err.message.includes('ENOENT')) {
                         mkpath.sync(path.resolve(dir, path.dirname(page.url)));
 
-                        l(`content: ${page.content}`);
+                        // l(`content: ${page.content}`);
                         // fixme: make it less wet
                         fs.writeFileSync(
                             path.resolve(dir, page.url),

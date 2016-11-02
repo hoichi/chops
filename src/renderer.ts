@@ -6,9 +6,10 @@ import {Channel, alts, chan, go, put, take} from 'js-csp';
 import * as csp                             from 'js-csp';
 import {isString}                           from 'lodash/fp';
 
-import {ChopData, ChopPage, ChopSite, Dictionary, ChopEvent}   from "./chops";
+import {ChopData, ChopPage, Dictionary, ChopEvent}  from "./chops";
 import l                                            from './log';
-import {FsWriter} from "./fsWriter";
+import {FsWriter}                                   from "./fsWriter";
+import * as u                                       from "./utils";
 
 /*
  * A template file (as a chop).
@@ -27,6 +28,7 @@ export interface PageRenderer {
 
 export interface PageRendererData {
     page: ChopPage;
+    cfg?: Dictionary<any>;
     [k: string]: any;
 }
 
@@ -39,6 +41,10 @@ interface TemplateSubscription {
     chRefresh: Channel;
     pages: Dictionary<ChopPage>;    // todo: the keys should be of type `ChopId`
 }
+
+const rendererCfg = { date_short: u.dateFormatter( // fixme: so hardcode
+    'en-US', {year: 'numeric', month: 'short', day: 'numeric'}
+)};
 
 export class ChopRenderer {
     private _chOut: Channel = chan();
@@ -124,7 +130,7 @@ export class ChopRenderer {
                 // take a template itself (or wait for it) and render the page
                 template = yield take(tplSub.chTpl);
                 let pageRendered = me.applySingleTemplate(template, {page});
-                l(`pageRendered.url = ${pageRendered.url}`);``
+                l(`pageRendered.url = ${pageRendered.url}`);
                 yield put(me._chOut, pageRendered);
             }
         }, [this]);
@@ -132,11 +138,11 @@ export class ChopRenderer {
 
     private applySingleTemplate(template: TemplateCompiled, data: PageRendererData): ChopEvent<ChopPage> {
         // todo: make it a pure function. and maybe separate rendering from data flow
-        // console.dir(data);
+        let fullData = Object.assign({}, {cfg: rendererCfg}, data);
         return {
-            type: 'add',    //fixme
-            data: Object.assign({}, data.page, template.render(data))
-        };``
+            type: 'add',    // fixme:
+            data: Object.assign({}, data.page, {content: template.render(fullData)})
+        };
     }
 
     private addTplSubscription(topic: string, page?: ChopPage): TemplateSubscription {
