@@ -5,6 +5,7 @@ var chops   = require('../build/index'),
     Path    = require('path'),
     pug     = require('pug');
 
+// templates
 var templates = chops
     .src('theme/jade/*.jade')
     .convert( tpl =>    Object.assign({}, {
@@ -14,6 +15,7 @@ var templates = chops
                         }) )
 ;
 
+// pages
 chops
     .src('**/*', {cwd: 'contents'})
     /* necessary defaults */

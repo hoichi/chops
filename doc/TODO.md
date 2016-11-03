@@ -2,10 +2,10 @@
 
 # NOW
 ### make it useful
-- [ ] templates
-    - [ ] watch
-    - [ ] compile
-    - [ ] render pages w/templates
+- [x] templates
+    - [x] watch
+    - [x] compile
+    - [x] render pages w/templates
 - [ ] collections
     - [ ] collect pages
     - [ ] csp.put()
