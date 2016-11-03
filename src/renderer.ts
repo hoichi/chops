@@ -40,6 +40,7 @@ interface TemplateSubscription {
     chTpl: Channel;
     chRefresh: Channel;
     pages: Dictionary<ChopPage>;    // todo: the keys should be of type `ChopId`
+    latest: TemplateCompiled;
 }
 
 const rendererCfg = { date_short: u.dateFormatter( // fixme: so hardcode
@@ -82,28 +83,32 @@ export class ChopRenderer {
 
             l(`Listening for templates`);
             while ( (tplEvent = yield take(this._chTemplates)) !== csp.CLOSED ) {
-                // todo: dedupe?
                 template = tplEvent.data;
                 l(`  I hear a template "${template.id}"`);
+
                 let subscription = this.addTplSubscription(template.id);
-                yield put(subscription.chTpl, template);
-                this.reApplyTemplate(template, subscription);   // q: race condition anyone?`
+``                subscription.latest = template; // todo:
+                                                // - put it on a [generic] Subscription class?
+                                                // - or create an fp-style latest(chan): Channel?
+                                                //   probably more expensive, but
+
+                yield put(subscription.chTpl, template);    // q: and do we need this channel at all?
+                this.reApplyTemplate(template, subscription);   // fixme: creates race conditions``
             }
         }.bind(this));
     }
 
     private reApplyTemplate(template: TemplateCompiled,
                             {pages, chRefresh}: TemplateSubscription ) {
+        l(`--- reapplying template ${template.id}`);
         go(function *(me) {
             for (let key in pages) {
-                l(`RRRRRendering a page "${key}"`);
                 let pageRendered = me.applySingleTemplate(template, {page: pages[key]}),
                     res = yield alts([
                         chRefresh,
                         [me._chOut, pageRendered]
                     ], {priority: true});
 
-                l(`pageRendered.url while reapplying template = ${pageRendered.url}`);
                 if (res.channel === chRefresh) break;   /*  or should we check for a value?
                                                             right now we just put `true` there */
             }
@@ -121,6 +126,7 @@ export class ChopRenderer {
                 template: TemplateCompiled;
 
             while ( (pageEvent = yield take(me._chContent)) !== csp.CLOSED ) {
+                l(` > > I hear a page "${pageEvent.data.id}"...`);
                 // get a tpl channel (or create a new one)
                 page = pageEvent.data;
                 tplName = me._tplNameExtractor(page);
@@ -128,19 +134,22 @@ export class ChopRenderer {
                 // todo: error by timeout if template never comes`
 
                 // take a template itself (or wait for it) and render the page
-                template = yield take(tplSub.chTpl);
+                l(` >> >> ...yielding a template "${tplName}"...`);
+                template = tplSub.latest || (yield take(tplSub.chTpl));
+                l(` >>> >>> ...and getting a template "${template.id}"`);
                 let pageRendered = me.applySingleTemplate(template, {page});
-                l(`pageRendered.url = ${pageRendered.url}`);
                 yield put(me._chOut, pageRendered);
             }
+            l(`NOT LISTENING TO PAGES ANYMORE`);
         }, [this]);
     }
 
     private applySingleTemplate(template: TemplateCompiled, data: PageRendererData): ChopEvent<ChopPage> {
         // todo: make it a pure function. and maybe separate rendering from data flow
         let fullData = Object.assign({}, {cfg: rendererCfg}, data);
+        l(`RRRRRendering a page "${data.page.id}"`);
         return {
-            type: 'add',    // fixme:
+            type: 'add',    // fixme: event flow doesn’ belong here at all
             data: Object.assign({}, data.page, {content: template.render(fullData)})
         };
     }
@@ -154,7 +163,8 @@ export class ChopRenderer {
             _tplSubscribers[topic] = subscription = {
                 chTpl: chan(csp.buffers.sliding(1)),
                 pages: Object.create(null),
-                chRefresh: chan(1)
+                chRefresh: chan(1),
+                latest: undefined
             };
             // csp.operations.pub.sub(_tplPub, topic, subscription.chTpl);
         }
