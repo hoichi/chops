@@ -8,12 +8,12 @@ import {isString}                           from 'lodash/fp';
 
 import {ChopData, ChopPage, Dictionary, ChopEvent}  from "./chops";
 import l                                            from './log';
-import {FsWriter}                                   from "./fsWriter";
+import {FsWriter}                                  from "./fsWriter";
 import * as u                                       from "./utils";
 
 /*
- * A template file (as a chop).
- * */
+ * A template file (as a chop)
+ */
 export interface TemplateCompiled extends ChopData {
     render: PageRenderer;
     // q: do we need anything from ChopPage? path, maybe?
@@ -58,9 +58,8 @@ export class ChopRenderer {
                 , tplNameOrExtractor: string | StringExtractor) {
 
         this._tplNameExtractor = isString(tplNameOrExtractor)
-            ? () => tplNameOrExtractor
-            : tplNameOrExtractor
-        ;
+                                    ? () => tplNameOrExtractor
+                                    : tplNameOrExtractor;
         // todo: runtime check for a function
 
         // l('Publishing template channels by id');
@@ -87,13 +86,13 @@ export class ChopRenderer {
                 l(`  I hear a template "${template.id}"`);
 
                 let subscription = this.addTplSubscription(template.id);
-``                subscription.latest = template; // todo:
+                subscription.latest = template; // todo:
                                                 // - put it on a [generic] Subscription class?
                                                 // - or create an fp-style latest(chan): Channel?
                                                 //   probably more expensive, but
 
                 yield put(subscription.chTpl, template);    // q: and do we need this channel at all?
-                this.reApplyTemplate(template, subscription);   // fixme: creates race conditions``
+                this.reApplyTemplate(template, subscription);   // fixme: race conditions
             }
         }.bind(this));
     }
@@ -101,12 +100,12 @@ export class ChopRenderer {
     private reApplyTemplate(template: TemplateCompiled,
                             {pages, chRefresh}: TemplateSubscription ) {
         l(`--- reapplying template ${template.id}`);
-        go(function *(me) {
+        go(function *() {
             for (let key in pages) {
-                let pageRendered = me.applySingleTemplate(template, {page: pages[key]}),
+                let pageRendered = this.applySingleTemplate(template, {page: pages[key]}),
                     res = yield alts([
                         chRefresh,
-                        [me._chOut, pageRendered]
+                        [this._chOut, pageRendered]
                     ], {priority: true});
 
                 if (res.channel === chRefresh) break;   /*  or should we check for a value?
@@ -114,34 +113,34 @@ export class ChopRenderer {
             }
 
             return;
-        }, [this]);
+        }.bind(this));
     }
 
     private listenForPages() {
-        go(function *(me) {
+        go(function *() {
             let pageEvent: ChopEvent<ChopPage>,
                 page,
                 tplName: string,
                 tplSub: TemplateSubscription,
                 template: TemplateCompiled;
 
-            while ( (pageEvent = yield take(me._chContent)) !== csp.CLOSED ) {
+            while ( (pageEvent = yield take(this._chContent)) !== csp.CLOSED ) {
                 l(` > > I hear a page "${pageEvent.data.id}"...`);
                 // get a tpl channel (or create a new one)
                 page = pageEvent.data;
-                tplName = me._tplNameExtractor(page);
-                tplSub = me.addTplSubscription(tplName, page);
+                tplName = this._tplNameExtractor(page);
+                tplSub = this.addTplSubscription(tplName, page);
                 // todo: error by timeout if template never comes`
 
                 // take a template itself (or wait for it) and render the page
                 l(` >> >> ...yielding a template "${tplName}"...`);
                 template = tplSub.latest || (yield take(tplSub.chTpl));
                 l(` >>> >>> ...and getting a template "${template.id}"`);
-                let pageRendered = me.applySingleTemplate(template, {page});
-                yield put(me._chOut, pageRendered);
+                let pageRendered = this.applySingleTemplate(template, {page});
+                yield put(this._chOut, pageRendered);
             }
             l(`NOT LISTENING TO PAGES ANYMORE`);
-        }, [this]);
+        }.bind(this));
     }
 
     private applySingleTemplate(template: TemplateCompiled, data: PageRendererData): ChopEvent<ChopPage> {

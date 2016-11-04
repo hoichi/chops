@@ -21,32 +21,33 @@ export class FsWriter {
 
             while ( (event = yield take(chIn)) !== csp.CLOSED
                     && !(event instanceof Error) ) {     // ← do we even get here if we throw?
-                let page = event.data;  // todo: check event.type
-
-                // l(event);
-                try {
-                    // l(`page: %o`, page);
-                    fs.writeFileSync(   // *Sync so we don’t try to write to the file we’re writing to already.
-                        path.resolve(dir, page.url),
-                        page.content,
-                        {encoding: 'UTF-8'}
-                    );
-                } catch (err) {
-                    if (err.message.includes('ENOENT')) {
-                        mkpath.sync(path.resolve(dir, path.dirname(page.url)));
-
-                        // l(`content: ${page.content}`);
-                        // fixme: make it less wet
-                        fs.writeFileSync(
-                            path.resolve(dir, page.url),
-                            page.content,
-                            {encoding: 'UTF-8'}
-                        );
-                    } else {
-                        throw err;
-                    }
-                }
+                // todo: check event type
+                let page = event.data;
+                writeAPage(path.resolve(dir, page.url), page.content);
             }
         });
+    }
+}
+
+function writeAPage(destPath: string, content: string): void {
+    try {
+        tryWritingOnce();
+    } catch (err) {
+        if (err.message.includes('ENOENT')) {
+            mkpath.sync( path.dirname(destPath) );
+            tryWritingOnce();
+        } else {
+            throw err;
+        }
+    }
+
+    function tryWritingOnce(): void {
+        fs.writeFileSync(   // It’s sync so we don’t try to write
+                            // to the file we’re writing to already.
+                            // (No idea if it works, maybe i need better safeguards)
+            destPath,
+            content,
+            {encoding: 'UTF-8'}
+        );
     }
 }
