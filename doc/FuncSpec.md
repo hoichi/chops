@@ -28,6 +28,28 @@ You should be able to:
 - configure collections’ destinations
 - reproduce any difference between pages and posts with api calls. Like, those are posts, index them, sort by date, add to rss feed. Those are pages, sort them by title and leave them be.
 
+##### Preconfiguration
+- yes, you can go:
+```js
+chops
+    .src(path)
+    .convert(d => { return {title: d.yfm.title || 'UNTITLED'} /* ... */})
+    .convert(d => { return {content: md.convert(d.content)}})
+;
+```
+or suchlike, managing everything manually.
+
+But you can also go:
+```js
+chops.content
+    .src(path)
+    /* ... */
+;
+```
+And at least ensure some defaults for content. (Also, `chops.content.src()` should probably return `ChoppingBoard<ContentPage>`, not `ChoppingBoard<AbstractChop>`.)
+
+Or maybe `chops.src()` should default to `chops.content.src()`.
+
 #### Readability
 
 How about:
@@ -43,7 +65,7 @@ How about:
             .collect(collection1)  // Or vice versa. This (←) way means collections are already created, which might be ok.
             .collect(collection2)
             .render(templates[`basicpage`])
-        dest(/* path/callback. the latter takes the meta and returns the path */);
+        write(/* path/callback. the latter takes the meta and returns the path */);
 ```
 
 Or:
@@ -58,9 +80,9 @@ Collections:
 
 ```js
 collection1 = chops
-                .collection({/*config*/})
-                .paginate()  /* is pagination a model concern or a template concern? what would Jekyll do? */
-                .dest(/* path */); /* Maybe not much use for callback because there's no source meta this callback should process. Still we have to check if the dest. path is present for both pages and collections */
+    .collection({/*config*/})
+    .paginate()  /* is pagination a model concern or a template concern? what would Jekyll do? */
+    .write(/* path */); /* Maybe not much use for callback because there's no source meta this callback should process. Still we have to check if the dest. path is present for both pages and collections */
 ```
 
 ## IN

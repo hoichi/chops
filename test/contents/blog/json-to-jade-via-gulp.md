@@ -20,7 +20,7 @@ gulp.task('templates', function() {
                   return require('./src/jade/data/the-big-data.json');
                 } ))
     .pipe(jade())
-    .pipe(gulp.dest('./dest/'));
+    .pipe(gulp.write('./dest/'));
 });
 ```
 

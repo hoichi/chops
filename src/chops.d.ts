@@ -11,66 +11,22 @@ interface ChopData {
 
 type ChopId = number | string;
 
-interface ChopEvent {
-    event: string;
-    data: ChopData;
+interface ChopEvent<T extends ChopData> {   // do we actually use it anywhere?
+    type: string;  // todo: [string] enum
+    data: T;
 }
 
-/*
- * PAGES THROUGH STAGES
- * */
+export interface ChopPageWritable {
+    url: string;
+}
 
-/*
- *  1. As a mere chokidar event.
- *     Current implementation doesn’t need any types though.
+/**
+ * An abstract source file. Might be a content file, might be, say, a template.
  */
-
-/*
- *  2. Page after reading a source file, ready for any reducing
- *     user might have ordered
- * */
-export interface PageOpened extends ChopData {
+export interface ChopPage extends ChopData, ChopPageWritable {
     type: 'file';   // just in case
     path: PagePath;
-    yfm: PageMeta;
-    rawContent: string;     // todo: fix `string | undefined`
-}
-
-/*
- *  3. Page after applying all the reducers, ready to be collected.
- * */
-/* q: still don’t know whether I should merge meta upon a Page or have a separate meta field as long as possible. It should be merged for a renderer though. */
-interface PageReduced extends PageOpened, PageMeta, PageCollectable {
-}
-
-/*
- *  4. Page after adding it to all the collections,
- *     its model ripe and ready for rendering.
- * */
-interface PageCollected extends PageReduced, PageMetaCollected {
-}
-
-/*
- * 4. Page have met its template, is rendered and ready to be written.
- * */
-interface PageRendered {
-    html: string;
-    dest: string;
-}
-
-/*
- * A template file (as a chop).
- * */
-interface TemplateCompiled extends ChopData {
-    render: PageRenderer;
-    // q: do we need anything from PageOpened? path, maybe?
-}
-
-/*
- * A template function for rendering pages
- */
-interface PageRenderer {
-    (page: PageCollected, site?: Site, globals?: any): string;
+    content: string;     // todo: fix `string | undefined`
 }
 
 /*
@@ -82,7 +38,6 @@ export interface PagePath {
     ext: string;
     name: string;
     path: string;
-    rel: string;
 }
 
 /*
@@ -96,6 +51,16 @@ interface PageCollectable extends ChopData {
     excerpt: string;
 }
 
+interface ContentMeta {
+    // We should have defaults for everything
+    title?: string;
+    date?: Date;
+    url?: string;
+    published?: boolean;
+    template?: string;  // does it belong here?
+    [k: string]: any;
+}
+
 /*
  * after adding the page to [primary] collection
  * */
@@ -105,11 +70,8 @@ interface PageMetaCollected {
     collection?: ChopsCollection;
 }
 
-interface PageMeta {
-    [k: string]: any;
-}
 
-interface Site {
+interface ChopSite {
     [k: string]: any;
 }
 

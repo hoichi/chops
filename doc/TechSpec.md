@@ -26,6 +26,11 @@ Page has to have a Collectable data to be collected. The page returned after col
 
 Any page has data of all the collections it’s added to, so you can use it in templates. Still better have basic `prev`/`next` for a primary collection.
 
+### C. Data Flow
+
+Listens: to source changes (`add`/`change`/`remove`)
+
+
 ## Data
 
 ### From calls to actions
@@ -61,6 +66,18 @@ Things like parsing single files _can_ be lazy, I guess.
 
 Things like rendering should definitely wait till the model is complete.
 
+### Transformers
+
+_(Not exactly transducers: we’re talking about the single pages &c, not collections—even though, technically, you **can** reduce objects as well.)_
+
+Some minimal required transformations are always applied to ensure all the necessary meta for collections and rendering exists. Everything user-specified is run afterwards (unless we find a way to safely replace default transformations with user-specified transformations).
+
+All the transformations are applied upon first collection*. Until then, we just hoard ’em.
+
+* Maybe we should abstract that moment into something like `exporting`.
+
+
+
 ### Model completeness
 
 Before certain steps can be run, we should make sure the model is ready. Two examples:
@@ -85,7 +102,7 @@ chops.src('content/**/*.md')
             return [];
     })
     .render(meta => meta.category === 'blog' ? templates['blog'] : templates['single'])
-.dest('build/');
+.write('build/');
 ```
 
 ### Data Flow
