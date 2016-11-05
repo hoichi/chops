@@ -2,10 +2,6 @@
 
 # NOW
 ### make it useful
-- [x] templates
-    - [x] watch
-    - [x] compile
-    - [x] render pages w/templates
 - [ ] collections
     - [ ] collect pages
     - [ ] csp.put()

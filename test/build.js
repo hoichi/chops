@@ -15,6 +15,10 @@ var templates = chops
                         }) )
 ;
 
+var testColl = chops.collection({
+    by: p => p.date || new Date()
+});
+
 // pages
 chops
     .src('**/*', {cwd: 'contents'})
@@ -46,6 +50,7 @@ chops
                                     'index.html'
                                 ) || 'untitled/index.html'
                         }))
-    .render(templates, page => page.template || 'single')
+    .collect(testColl)
+    // fixme: .render(templates, page => page.template || 'single')
     .write('build') // that’s test/build
 ;

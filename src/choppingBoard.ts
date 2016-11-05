@@ -12,6 +12,7 @@ import * as csp from 'js-csp';
 import {isString} from 'lodash/fp';
 
 import l from './log';
+import {ChopCollection} from "./collection";
 
 interface TemplateNameCb {
     (p: ChopPage): string;
@@ -48,7 +49,7 @@ export class ChoppingBoard<T extends ChopData> extends Convertable {
         return renderer;
     }
 
-    write(dir: string) {
+    write(dir: string): FsWriter {
         l(`Writing to %s`, dir);
         const writer = new FsWriter(this._chOut, dir);
         this.startTransmitting();
@@ -56,27 +57,30 @@ export class ChoppingBoard<T extends ChopData> extends Convertable {
         return writer;
     }
 
+    collect(collection: ChopCollection) {
+        l(`collecting to...some kinda collection`);
+        collection.listen(this._chOut);
+
+        return collection;
+    }
+
     startTransmitting() {   // q: do we need stopTransmitting? or some cleanup at all?
         this.lockConverters();
 
-        go(function *(me) {
+        go(function *() {
             let event: ChopEvent<T>;
 
-            while ( (event = yield take(me._chIn))  !==  csp.CLOSED ) {
+            while ( (event = yield take(this._chIn))  !==  csp.CLOSED ) {
                 let {type, data} = event;
                 // todo: check for event type
                 let eventOut = {
                     type,
-                    data: me.runConverters(data)
+                    data: this.runConverters(data)
                 };
 
                 l(`ch-ch-choppingBoard transmitting "${event.type}" for id "${event.data.id}"`);
-                yield put(me._chOut, eventOut);
+                yield put(this._chOut, eventOut);
             }
-        }, [this]);
-
-        go(function *(me) {
-            // l(yield take(this._chOut));
         }.bind(this));
     }
 }

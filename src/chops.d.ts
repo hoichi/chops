@@ -61,26 +61,10 @@ interface ContentMeta {
     [k: string]: any;
 }
 
-/*
- * after adding the page to [primary] collection
- * */
-interface PageMetaCollected {
-    nextUrl?: string;
-    prevUrl?: string;
-    collection?: ChopsCollection;
-}
-
-
 interface ChopSite {
     [k: string]: any;
 }
 
-interface ChopsCollection {
-    sortBy: (el) => boolean | string;
-    order: 'asc' | 'desc';
-    sortedList: PageMetaCollected[];   // in
-    dic: Dictionary<PageMetaCollected>;
-}
 
 interface Dictionary<T> {
     [key:string]: T;
