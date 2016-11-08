@@ -16,7 +16,7 @@ var templates = chops
 ;
 
 var testColl = chops.collection({
-    by: p => p.date || new Date()
+    by: p => (p.date || new Date())
 });
 
 // pages

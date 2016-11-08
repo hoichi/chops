@@ -3,9 +3,10 @@
 # NOW
 ### make it useful
 - [ ] collections
-    - [ ] collect pages
-    - [ ] csp.put()
-    - [ ] render collections
+    - [ ] fix:
+        - [ ] update pages wit `prev/next`
+        - [ ] `collect().render()`;
+    - [ ] render collections themselves
     
 ### make it right
 - [ ] types/interfaces/modules

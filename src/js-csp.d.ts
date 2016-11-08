@@ -18,7 +18,7 @@ declare module "js-csp" {
     export function offer(channel: any, value: any): any;
     export function poll(channel: any): any;
     export function put(channel: Channel, value: Object): PutInstructionType; /* 1 */
-    export function putAsync(channel: any, value: any, callback: any): void;
+    export function putAsync(channel: any, value: any, callback?: any): void;
     export function sleep(msecs: any): any;
     export function spawn(gen: any, creator: any): any;
     export function take(channel: Channel): TakeInstructionType; /* 1 */

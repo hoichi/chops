@@ -1,13 +1,15 @@
 /**
  * Created by hoichi on 04.11.2016.
  */
-import {Channel, chan, go, put, take}       from 'js-csp';
-import * as csp                         from 'js-csp';
-import {map, sortBy, sortedLastIndexBy} from 'lodash/fp';
+import {Channel, chan, go, put, putAsync, take} from 'js-csp';
+import * as csp from 'js-csp';
+import {map, sortBy, sortedLastIndexBy} from 'lodash';
 
-import {ChopPage, Dictionary, ChopId, ChopEvent}   from "./chops";
-import {FsWriter}                       from "./fsWriter";
-import l                                from './log';
+import {ChopPage, Dictionary, ChopId, ChopEvent} from "./chops";
+import {FsWriter} from "./fsWriter";
+import l, * as log from './log';
+
+log.on();
 
 export interface Collectable {
     collect(collection: ChopsCollection): Collectable;
@@ -37,7 +39,8 @@ export class ChopsCollection {
     private _isFlushed = false;
 
     private _chIn: Channel;
-    private _isListening = false;
+    private _isListening    = false;
+    private _isTransmitting = false;
     private _chOutPages: Channel;
 
     constructor (options: SortOptions) {
@@ -53,7 +56,7 @@ export class ChopsCollection {
     write(dir: string): FsWriter {
         l(`Writing to %s`, dir);
         const writer = new FsWriter(this._chOutPages, dir);
-        this.startListening();
+        this.startTransmitting();
 
         return writer;
     }
@@ -61,7 +64,7 @@ export class ChopsCollection {
     collect(collection: ChopsCollection) {
         l(`collecting to...some kinda collection`);
         collection.listen(this._chOutPages);
-
+        this.startTransmitting();
         return collection;
     }
 
@@ -72,7 +75,7 @@ export class ChopsCollection {
 
         this._chIn = chIn;
         this._isListening = true;
-        this.startListening();
+        this.startTransmitting();
     }
 
     protected add(page: ChopPage) {
@@ -99,30 +102,41 @@ export class ChopsCollection {
     }
 
     protected flush() {
-        l(`Sorting the collection`);
-        this._sortedList = sortBy( map(this._dic, rec => rec.page)
-                                 , this._sortOptions.by);
+        let dic = this._dic;
+        l(`Sorting the collection (length=${Object.keys(dic).length})`);
+
+        this._sortedList = sortBy(
+            map(Object.keys(dic), key => dic[key].page),
+            this._sortOptions.by
+        );
+
         // todo: update page with `prev/next` &c
-        this._isFlushed = true;
-        this._isFlushing = true;
+        putAsync(this._chIn, {type: 'flush'});
     }
 
-    private startListening() {
-        setTimeout(this.flush.bind(this), 5000);
+    private startTransmitting() {
+        if (this._isTransmitting) return;
+        this._isTransmitting = true;
+
+        l('Collection is transmitting. Input channel is...');
+        setTimeout(this.flush.bind(this), 3000);
 
         go(function *() {
             let event: ChopEvent<ChopPage>,
                 page;
 
             while ( (event = yield take(this._chIn)) !== csp.CLOSED) {
+                if (event.type === 'flush') {
+                    l('About to flush ’em pages');
+                    yield* this.flushAllPages(); // don’t stop till we’ve sent ’em all
+                    this._isFlushed = true;
+                    continue;
+                }
+
+                l(`Collecting the page "${event.data.id}"`);
                 page = this.add(event.data);    // if collection is already sorted,
                                                 // the page we get is updated with `prev/next`
                                                 // and no, I don’t like how arcane it is
-
-                if (this._isFlushing) {
-                    yield* this.flushAllPages(); // don’t stop till we’ve sent ’em all
-                    this._isFlushing = false;
-                }
 
                 if (this._isFlushed) { // green light, we can send it downstream
                     yield put(this._chOutPages, {
@@ -135,9 +149,9 @@ export class ChopsCollection {
     }
 
     private *flushAllPages() {
-        l(`Sending all the sorted pages downstream`);
         let pages = this._sortedList,
             len = pages.length;
+        l(`Sending all the ${len} sorted pages downstream`);
 
         for (let i=0; i<len; i++) {
             yield put(this._chOutPages, {
@@ -145,6 +159,8 @@ export class ChopsCollection {
                 data: pages[i]
             });
         }
+
+        return;
     }
 }
 

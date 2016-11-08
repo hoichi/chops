@@ -12,7 +12,7 @@ import * as csp from 'js-csp';
 import {isString} from 'lodash/fp';
 
 import l from './log';
-import {ChopCollection} from "./collection";
+import {ChopsCollection} from "./collection";
 
 interface TemplateNameCb {
     (p: ChopPage): string;
@@ -57,9 +57,10 @@ export class ChoppingBoard<T extends ChopData> extends Convertable {
         return writer;
     }
 
-    collect(collection: ChopCollection) {
+    collect(collection: ChopsCollection) {
         l(`collecting to...some kinda collection`);
         collection.listen(this._chOut);
+        this.startTransmitting();
 
         return collection;
     }

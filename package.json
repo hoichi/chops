@@ -41,7 +41,7 @@
     "markdown-it": "^8.0.1",
     "mock-fs": "^3.11.0",
     "pug": "^2.0.0-beta6",
-    "typescript": "^2.0.3"
+    "typescript": "^2.0.8"
   },
   "ava": {
     "files": [
