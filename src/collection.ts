@@ -34,8 +34,6 @@ export class ChopsCollection {
     private _sortOptions: SortOptions;
 
     private _sortedList: ChopPage[];
-    private _dic: Dictionary<CollectionDicRecord>;
-    private _isFlushing = false;
     private _isFlushed = false;
 
     private _chIn: Channel;
@@ -48,7 +46,6 @@ export class ChopsCollection {
             by: options.by
         };
         this._sortedList = [];
-        this._dic = Object.create(null);
 
         this._chOutPages = chan();
     }
@@ -83,33 +80,23 @@ export class ChopsCollection {
         // todo: check for dupes
         // or just implement .replace() for the 'change' event
 
-        let record: CollectionDicRecord = {
-            id: page.id,
-            key: this._sortOptions.by(page),
-            page: page
-        };
-        this._dic[record.id] = record;
+        let list = this._sortedList,
+            sortBy = this._sortOptions.by,
+            key = sortBy(page);
 
-        if (this._isFlushed) { // the sorted list already created
-            let idx = sortedLastIndexBy( this._sortedList
-                                       , record.key
-                                       , this._sortOptions.by );
-            this._sortedList.splice(idx, 0, page);
-            // todo: update page with `prev/next`
-        }
+        let idx = sortedLastIndexBy(list, key, sortBy ),
+            idxPrev = idx-1,
+            idxNext = idx+1,
+            updatedPage = Object.assign({}, page, {``
+                prev: idxPrev >= 0 ? list[idxPrev] : null,
+                next: idxNext < list.length ? list[idxNext] : null
+            });
 
-        return page;
+        list.splice(idx, 0, updatedPage);
+        return updatedPage;
     }
 
     protected flush() {
-        let dic = this._dic;
-        l(`Sorting the collection (length=${Object.keys(dic).length})`);
-
-        this._sortedList = sortBy(
-            map(Object.keys(dic), key => dic[key].page),
-            this._sortOptions.by
-        );
-
         // todo: update page with `prev/next` &c
         putAsync(this._chIn, {type: 'flush'});
     }

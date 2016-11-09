@@ -4,7 +4,6 @@
 ### make it useful
 - [ ] collections
     - [ ] fix:
-        - [ ] update pages wit `prev/next`
         - [ ] `collect().render()`;
     - [ ] render collections themselves
     
