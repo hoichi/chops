@@ -3,8 +3,6 @@
 # NOW
 ### make it useful
 - [ ] collections
-    - [ ] fix:
-        - [ ] `collect().render()`;
     - [ ] render collections themselves
     
 ### make it right

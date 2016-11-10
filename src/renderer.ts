@@ -32,6 +32,13 @@ export interface PageRendererData {
     [k: string]: any;
 }
 
+/*
+ * extracts a template name from a ChopPage
+ * */
+export interface TemplateNameCb {
+    (p: ChopPage): string;
+}
+
 export interface StringExtractor {
     (page: ChopPage): string;
 }

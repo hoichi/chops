@@ -8,8 +8,8 @@ import {map, sortBy, sortedLastIndexBy} from 'lodash';
 import {ChopPage, Dictionary, ChopId, ChopEvent} from "./chops";
 import {FsWriter} from "./fsWriter";
 import l, * as log from './log';
-
-log.on();
+import {ChoppingBoard} from "./choppingBoard";
+import {ChopRenderer, TemplateNameCb} from "./renderer";
 
 export interface Collectable {
     collect(collection: ChopsCollection): Collectable;
@@ -50,6 +50,7 @@ export class ChopsCollection {
         this._chOutPages = chan();
     }
 
+/*
     write(dir: string): FsWriter {
         l(`Writing to %s`, dir);
         const writer = new FsWriter(this._chOutPages, dir);
@@ -57,6 +58,7 @@ export class ChopsCollection {
 
         return writer;
     }
+*/
 
     collect(collection: ChopsCollection) {
         l(`collecting to...some kinda collection`);
@@ -75,6 +77,24 @@ export class ChopsCollection {
         this.startTransmitting();
     }
 
+    render(templates: ChoppingBoard<ChopPage>, tplName: string | TemplateNameCb) {
+        /**
+         * Welp. Right now what we call is `templates.get('tplName')`. Meaning that .get() should wait on a channel and yield that specific template when it arrives.
+         * (Of course the signature could be just `.render(templates, 'tplName')` or something).
+         * Does CSP offer filtering out of the box? [Sure does](https://github.com/ubolonton/js-csp/blob/master/doc/advanced.md#filterfromp-ch-bufferorn)
+         */
+
+            // todo: check if it’s the right type of board (what if it’s not a ChopPage?)
+            // todo: this method is for pages/collections, not for, say, templates
+
+        const renderer = new ChopRenderer(templates.chOut, this._chOutPages, tplName);
+        templates.startTransmitting();
+        this.startTransmitting();
+
+        return renderer;
+    }
+
+
     protected add(page: ChopPage) {
 
         // todo: check for dupes
@@ -87,7 +107,7 @@ export class ChopsCollection {
         let idx = sortedLastIndexBy(list, key, sortBy ),
             idxPrev = idx-1,
             idxNext = idx+1,
-            updatedPage = Object.assign({}, page, {``
+            updatedPage = Object.assign({}, page, {
                 prev: idxPrev >= 0 ? list[idxPrev] : null,
                 next: idxNext < list.length ? list[idxNext] : null
             });

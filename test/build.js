@@ -1,7 +1,7 @@
 var chops   = require('../build/index'),
     fm      = require('front-matter'),
     l       = require('../build/log').default,
-    md      = require('markdown-it')();
+    md      = require('markdown-it')(),
     Path    = require('path'),
     pug     = require('pug');
 
@@ -50,7 +50,8 @@ chops
                                     'index.html'
                                 ) || 'untitled/index.html'
                         }))
+
     .collect(testColl)
-    // fixme: .render(templates, page => page.template || 'single')
+    .render(templates, page => page.template || 'single')
     .write('build') // that’s test/build
 ;

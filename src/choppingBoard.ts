@@ -6,17 +6,13 @@
 import {ChopEvent, ChopPage, ChopData} from "./chops";
 import {Convertable} from './convertable';
 import {FsWriter} from './fsWriter';
-import {ChopRenderer} from './renderer';
+import {ChopRenderer, TemplateNameCb} from './renderer';
 import {Channel, chan, go, put, take} from 'js-csp';
 import * as csp from 'js-csp';
 import {isString} from 'lodash/fp';
 
 import l from './log';
 import {ChopsCollection} from "./collection";
-
-interface TemplateNameCb {
-    (p: ChopPage): string;
-}
 
 export class ChoppingBoard<T extends ChopData> extends Convertable {
     // fixme: maybe Convertable is better off as a decorator
