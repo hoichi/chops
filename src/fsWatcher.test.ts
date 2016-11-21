@@ -12,7 +12,7 @@ process.chdir('D:\\dev\\chops');
 log(`Changed dir to: ${process.cwd()}`);
 
 
-let watchan = SourceWatcherFabric('test/', {});
+let watchan = SourceWatcherFabric('test/contents', {});
 
 csp.go(function *() {
     let event: ChopEvent<ChopPage>,

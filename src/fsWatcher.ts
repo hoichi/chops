@@ -13,7 +13,7 @@ import l                from './log';
 const   csp = require('js-csp');
 
 
-export function SourceWatcherFabric(globs, options?: any): any /* fixme: channel type */ {
+export function SourceWatcherFabric(globs, options?: any): any /* fixme: channel action */ {
     let ch = csp.chan(),
         watcher = chokidar.watch(globs, options);   // that's not lazy
 
@@ -71,7 +71,7 @@ function packAChop(event, path, cwd = '.'): ChopEvent<ChopPage> {
     }
 
     return {
-        type: event,
+        action: event,
         data: page
     }
 }

@@ -3,7 +3,7 @@
  * Created by hoichi on 15.10.2016.
  */
 
-import {isFunction} from 'lodash/fp';
+import {isFunction} from 'lodash';
 
 import {ChopData}   from './chops';
 import l            from './log';

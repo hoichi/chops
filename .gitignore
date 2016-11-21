@@ -42,3 +42,4 @@ lib/
 /.imdone/
 /_tmp/
 /test/build/
+/yarn.lock

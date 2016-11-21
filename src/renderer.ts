@@ -4,7 +4,7 @@
  */
 import {Channel, alts, chan, go, put, take} from 'js-csp';
 import * as csp                             from 'js-csp';
-import {isString}                           from 'lodash/fp';
+import {isString}                           from 'lodash';
 
 import {ChopData, ChopPage, Dictionary, ChopEvent}  from "./chops";
 import l                                            from './log';
@@ -46,7 +46,7 @@ export interface StringExtractor {
 interface TemplateSubscription {
     chTpl: Channel;
     chRefresh: Channel;
-    pages: Dictionary<ChopPage>;    // todo: the keys should be of type `ChopId`
+    pages: Dictionary<ChopPage>;    // todo: the keys should be of action `ChopId`
     latest: TemplateCompiled;
 }
 
@@ -56,8 +56,6 @@ const rendererCfg = { date_short: u.dateFormatter( // fixme: so hardcode
 
 export class ChopRenderer {
     private _chOut: Channel = chan();
-    private _tplPub;
-    private _tplSubscribers: Dictionary<TemplateSubscription> = Object.create(null);
     private _tplNameExtractor: (page: ChopPage) => string | string;
 
     constructor ( private _chTemplates: Channel
@@ -75,6 +73,10 @@ export class ChopRenderer {
         l('Now hark!');
         this.listenForTemplates();
         this.listenForPages();
+    }
+
+    get chOut() {
+        return this._chOut;
     }
 
     write(dir: string) {
@@ -155,7 +157,7 @@ export class ChopRenderer {
         let fullData = Object.assign({}, {cfg: rendererCfg}, data);
         l(`RRRRRendering a page "${data.page.id}"`);
         return {
-            type: 'add',    // fixme: event flow doesn’ belong here at all
+            action: 'add',    // fixme: event flow doesn’ belong here at all
             data: Object.assign({}, data.page, {content: template.render(fullData)})
         };
     }

@@ -1,4 +1,5 @@
-var chops   = require('../build/index'),
+const
+    chops   = require('../build/index'),
     fm      = require('front-matter'),
     l       = require('../build/log').default,
     md      = require('markdown-it')(),
@@ -6,7 +7,7 @@ var chops   = require('../build/index'),
     pug     = require('pug');
 
 // templates
-var templates = chops
+let templates = chops
     .src('theme/jade/*.jade')
     .convert( tpl =>    Object.assign({}, {
                             id: tpl.path.name,
@@ -15,9 +16,15 @@ var templates = chops
                         }) )
 ;
 
-var testColl = chops.collection({
-    by: p => (p.date || new Date())
-});
+let testColl = chops.collection({
+            by: p => (p.date || new Date())
+        })
+        .patch(() => ({
+            url: 'blog/index.html'
+        }))
+        .render(templates, 'blog')
+        .write('build')
+    ;
 
 // pages
 chops
@@ -31,7 +38,7 @@ chops
                         }, page))
     /* processing yfm */
     .convert(page =>    {
-                            var yfm = fm(page.content);
+                            const yfm = fm(page.content);
                             return yfm.body
                                 ? Object.assign({}, page, yfm.attributes, {content: yfm.body})
                                 : page;

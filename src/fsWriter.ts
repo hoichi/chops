@@ -21,7 +21,7 @@ export class FsWriter {
 
             while ( (event = yield take(chIn)) !== csp.CLOSED
                     && !(event instanceof Error) ) {     // ← do we even get here if we throw?
-                // todo: check event type
+                // todo: check event action
                 let page = event.data;
                 writeAPage(path.resolve(dir, page.url), page.content);
             }

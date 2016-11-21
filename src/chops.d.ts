@@ -12,7 +12,8 @@ interface ChopData {
 type ChopId = number | string;
 
 interface ChopEvent<T extends ChopData> {   // do we actually use it anywhere?
-    type: string;  // todo: [string] enum
+    action: string;     // TODO: [string] enum
+    type?: string;      // HACK: should be required when we transition fully
     data: T;
 }
 
