@@ -4,7 +4,7 @@
  */
 
 import {ChopEvent, ChopPage, ChopData} from "./chops";
-import {Convertable} from './convertable';
+import {ChainMaker} from './chainmaker';
 import {FsWriter} from './fsWriter';
 import {ChopRenderer, TemplateNameCb} from './renderer';
 import {Channel, chan, go, put, take} from 'js-csp';
@@ -14,7 +14,7 @@ import l from './log';
 import {ChopsCollection} from "./collection";
 import {Transmitter} from "./transmitter";
 
-export class ChoppingBoard<T extends ChopData> extends Convertable {
+export class ChoppingBoard<T extends ChopData> extends ChainMaker {
     private _chOut;     // this is where the board is putting the values
     private _chOutLatest; // this is caching `.chOutPages` of the latest collection we’ve linked to
     private _isTransmitting = false;
@@ -22,38 +22,13 @@ export class ChoppingBoard<T extends ChopData> extends Convertable {
     private _transmitters: Transmitter[][] = [];
 
     constructor(private _chIn: Channel) {
-        super();
+        super('page');
 
         this._chOutLatest = this._chOut = chan();
     }
 
     get chOut() {
         return this._chOut;
-    }
-
-    protected addTransmitter(transmitter:Transmitter, dataType: string) {
-        let chain = this._transmitters[dataType],
-            prev;
-
-        if (!chain || !(prev = chain[chain.length - 1])) {
-            throw Error('Cannot add a transmitter: no emitter present, to start with.');
-        }
-
-        prev.addListener(transmitter, dataType);
-        chain.push(transmitter);
-    }
-
-    protected addEmitter(emitter:Transmitter, dataType: string) {
-        let chain = this._transmitters[dataType];
-
-        if (!chain) {
-            this._transmitters[dataType] = chain = [];
-        } else if (chain.length) {
-            throw Error('You can only add an emitter to a start of the chain');
-        }
-
-        chain.push(emitter);
-        // should we init it somehow?
     }
 
     render(templates: ChoppingBoard<ChopPage>, tplName: string | TemplateNameCb) {

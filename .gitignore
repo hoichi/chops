@@ -43,3 +43,4 @@ lib/
 /_tmp/
 /test/build/
 /yarn.lock
+/.vscode/

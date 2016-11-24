@@ -1,6 +1,12 @@
 # IN
 
 # NOW
+## Refactor!
+- [ ] implement `ChainMaker`
+- [ ] inherit from `ChainMaker`
+    - [ ] so lose `Collectable`
+- [ ] implement `convert()` through `addListener()`
+
 ### make it useful
 - [ ] refactor Collection piped calls
     - [ ] `render` should return `this`
