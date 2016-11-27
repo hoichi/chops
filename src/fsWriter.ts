@@ -6,14 +6,17 @@ import {Channel, go, take}  from 'js-csp';
 
 import {ChopEvent, ChopPage} from "./chops";
 import l            from './log';
+import {Transmitter} from "./transmitter";
 
-export class FsWriter {
-    constructor(private chIn: Channel, private dir: string) {
-        this.startWriting();
+export class FsWriter extends Transmitter {
+    constructor(private dir: string) {
+        super();
     }
 
-    startWriting(): void {
-        let {chIn, dir} = this;
+    startTransmitting() {
+        // hack: that’s a dead-end transmitter, which is probably not good
+        const {dir} = this,
+            chIn = this.chIn('page');
 
         l(`Roger: writing to "${dir}"`);
         go(function *() {
@@ -25,7 +28,11 @@ export class FsWriter {
                 let page = event.data;
                 writeAPage(path.resolve(dir, page.url), page.content);
             }
-        });
+        }.bind(this));
+    }
+
+    startReceiving() {
+        this.startTransmitting();
     }
 }
 

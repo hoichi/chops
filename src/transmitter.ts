@@ -10,9 +10,13 @@ export abstract class Transmitter {
     private _listeners: Transmitter[] = [];
     private _isTransmitting = false;
 
-    private chOut(subCh: string) {
+    protected chOut(subCh: string) {
         let ch = this._chOut[subCh];
         return ch || (this._chOut[subCh] = chan());
+    }
+
+    protected chIn(subCh: string) {
+        return this._chIn[subCh];   // q: some tests?
     }
 
     addListener(listener: Transmitter, subCh: string) {
@@ -36,8 +40,16 @@ export abstract class Transmitter {
         }
 
         this._chIn[subCh] = chIn;
+        this.startReceiving();
     }
 
-    protected abstract startTransmitting();
+    protected abstract startTransmitting(); // q: make it public?
+
+    /*
+     * By default, startReceiving does nothing.
+     * It’s only needed in the minority of cases. Most of them shits should be lazy
+     * and only run anything when there’s a listener.
+     * */
+    protected startReceiving() {}
 
 }

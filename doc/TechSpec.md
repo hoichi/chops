@@ -1,4 +1,6 @@
 ## IN
+- `Transmitter` and all its descendants should pass unrecognized events along untouched and unhindered
+-
 
 ## Needs
 
@@ -20,11 +22,26 @@ So we can start with a linear prototype that simply convert singles to singles a
 
 ## Collections
 
+Collection:
+- accepts events
+- counts `add`s
+- if a `.filter()` was set
+    - immediately passes down the pages that don’t satisfy the filter
+    - those that do, collects, hinders, mutates
+- waits for `ready` and the required amount of `add`s
+- sorts and updates pages (it it wasn’t done in the process)
+- passes down all the pages it collected
+- passes down the collection
+    - if there was a `.slice()` or `.takeN()`, slices the sorted list
+    - passes the list down
+
+
 A chainable `.collect()` (or something like `collectPrimary()`) passes down a page with (`prev`/`next`) set.
 
 Page has to have a Collectable data to be collected. The page returned after collection is both a Collectable and a Collected, so it can be collected a few times over.
 
 Any page has data of all the collections it’s added to, so you can use it in templates. Still better have basic `prev`/`next` for a primary collection.
+
 
 ### C. Data Flow
 

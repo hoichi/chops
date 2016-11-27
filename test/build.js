@@ -8,6 +8,7 @@ const
 
 // templates
 let templates = chops
+    .templates
     .src('theme/jade/*.jade')
     .convert( tpl =>    Object.assign({}, {
                             id: tpl.path.name,

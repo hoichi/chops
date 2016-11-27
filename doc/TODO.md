@@ -5,7 +5,9 @@
 - [ ] implement `ChainMaker`
 - [ ] inherit from `ChainMaker`
     - [ ] so lose `Collectable`
-- [ ] implement `convert()` through `addListener()`
+- [ ] implement `Transmitter`
+- [ ] inherit from `Transmitter`
+- [ ] implement everything through `addListener()`
 
 ### make it useful
 - [ ] refactor Collection piped calls
@@ -15,12 +17,12 @@
     - [ ] `render` should return `this`
     - [ ] `write` should return `this`
 - [ ] render collections themselves
+- [ ] group pages/collections by template, re-render on template update
 
 ### make it right
 - [ ] types/interfaces/modules
-- [ ] unit tests
-    - [ ] look up that Ava/mock-fs recipe
-    - [ ] or try to use tape
+- [ ] unit tests (Jest?)
+    - [ ] `Transmitter` and all descendants should pass unrecognized events along untouched and unhindered
 - [ ] docs
 
 ### make it good (AKA 'backlog')

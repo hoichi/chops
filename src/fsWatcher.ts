@@ -4,43 +4,48 @@ import * as fs          from 'fs';
 import * as Path        from 'path';
 
 import {
-    ChopEvent, ChopPage, PagePath
+    ChopEvent, ChopPage, PagePath, Dictionary
 }       from "./chops";
 import {ChoppingBoard}  from './choppingBoard';
 import l                from './log';
+import {Transmitter} from "./transmitter";
 
 // fixme: declare those modules properly
 const   csp = require('js-csp');
 
+export class FsWatcher extends Transmitter {
+    constructor(private globs, private options: Dictionary<any> = {}) {
+        super();
+    }
 
-export function SourceWatcherFabric(globs, options?: any): any /* fixme: channel action */ {
-    let ch = csp.chan(),
-        watcher = chokidar.watch(globs, options);   // that's not lazy
+    protected startTransmitting() {
+        let ch = this.chOut('pages'),
+            {globs, options} = this,
+            watcher = chokidar.watch(globs, options);   // that's not lazy
 
-    l(`Watching for ${globs} inside ${process.cwd()}`);
-    /* todo:
-     * - options defaults
-     * - an option to add pre-asterisk part of the globs to the cwd.
-     *   or am I outsmarting `fs.watch()`, `node-glob` et. al?
-     * */
+        l(`Watching for ${this.globs} inside ${process.cwd()}`);
+        /* todo:
+         * - options defaults
+         * - an option to add pre-asterisk part of the globs to the cwd.
+         *   or am I outsmarting `fs.watch()`, `node-glob` et. al?
+         * */
 
-    watcher
-        .on('all', (event, path) => {
-            if (event === 'add' || event === 'change') {
-                l(`Emitting "${event}" for "${path}"`);
-                csp.putAsync(ch, packAChop(event, path, options && options.cwd));
-            }
-        })
-        .on('ready', () => {
-            console.log(`And the first pass is done.`);
-            // todo: ...
-        })
-        .on('error', err => {
-            csp.putAsync(ch, new Error(`Chokidar error: ${err}`));
-        })
-    ;
-
-    return new ChoppingBoard<ChopPage>(ch);
+        watcher
+            .on('all', (event, path) => {
+                if (event === 'add' || event === 'change') {
+                    l(`Emitting "${event}" for "${path}"`);
+                    csp.putAsync(ch, packAChop(event, path, options && options['cwd']));
+                }
+            })
+            .on('ready', () => {
+                console.log(`And the first pass is done.`);
+                // todo: ...
+            })
+            .on('error', err => {
+                csp.putAsync(ch, new Error(`Chokidar error: ${err}`));
+            })
+        ;
+    }
 }
 
 function packAChop(event, path, cwd = '.'): ChopEvent<ChopPage> {

@@ -1,4 +1,4 @@
-import {SourceWatcherFabric} from './fsWatcher';
+import {FsWatcher} from './fsWatcher';
 
 import test from 'ava';
 import {ChopEvent, ChopPage} from "./chops";
@@ -6,13 +6,13 @@ import {ChopEvent, ChopPage} from "./chops";
 const csp = require('js-csp');
 
 // cwd can depend on whether the test is run through Ava or from Node directly
-var log = console.log.bind(console);
+const log = console.log.bind(console);
 log(`Initial cwd: ${process.cwd()}`);
 process.chdir('D:\\dev\\chops');
 log(`Changed dir to: ${process.cwd()}`);
 
 
-let watchan = SourceWatcherFabric('test/contents', {});
+let watchan = new FsWatcher('test/contents', {});
 
 csp.go(function *() {
     let event: ChopEvent<ChopPage>,

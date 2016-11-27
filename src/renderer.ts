@@ -10,6 +10,7 @@ import {ChopData, ChopPage, Dictionary, ChopEvent}  from "./chops";
 import l                                            from './log';
 import {FsWriter}                                  from "./fsWriter";
 import * as u                                       from "./utils";
+import {Transmitter} from "./transmitter";
 
 /*
  * A template file (as a chop)
@@ -54,34 +55,17 @@ const rendererCfg = { date_short: u.dateFormatter( // fixme: so hardcode
     'en-US', {year: 'numeric', month: 'short', day: 'numeric'}
 )};
 
-export class ChopRenderer {
-    private _chOut: Channel = chan();
+export class ChopRenderer extends Transmitter {
     private _tplNameExtractor: (page: ChopPage) => string | string;
+    private _tplSubscribers = [];
 
-    constructor ( private _chTemplates: Channel
-                , private _chContent: Channel
-                , tplNameOrExtractor: string | StringExtractor) {
+    constructor (tplNameOrExtractor: string | StringExtractor, private modelType = 'page') {
+
+        super();
 
         this._tplNameExtractor = isString(tplNameOrExtractor)
                                     ? () => tplNameOrExtractor
                                     : tplNameOrExtractor;
-        // todo: runtime check for a function
-
-        // l('Publishing template channels by id');
-        // this._tplPub = csp.operations.pub(_chTemplates, tpl => tpl.id);
-
-        l('Now hark!');
-        this.listenForTemplates();
-        this.listenForPages();
-    }
-
-    get chOut() {
-        return this._chOut;
-    }
-
-    write(dir: string) {
-        l(`Writing to %s`, dir);
-        return new FsWriter(this._chOut, dir);
     }
 
     private listenForTemplates() {
@@ -90,7 +74,7 @@ export class ChopRenderer {
                 template: TemplateCompiled;
 
             l(`Listening for templates`);
-            while ( (tplEvent = yield take(this._chTemplates)) !== csp.CLOSED ) {
+            while ( (tplEvent = yield take(this.chIn('template'))) !== csp.CLOSED ) {
                 template = tplEvent.data;
                 l(`  I hear a template "${template.id}"`);
 
@@ -102,6 +86,7 @@ export class ChopRenderer {
 
                 yield put(subscription.chTpl, template);    // q: and do we need this channel at all?
                 this.reApplyTemplate(template, subscription);   // fixme: race conditions
+                                                                // maybe just delegate to a generator, like in Collection
             }
         }.bind(this));
     }
@@ -110,11 +95,13 @@ export class ChopRenderer {
                             {pages, chRefresh}: TemplateSubscription ) {
         l(`--- reapplying template ${template.id}`);
         go(function *() {
+            let chOut = this.chOut(this.modelType);
+
             for (let key in pages) {
                 let pageRendered = this.applySingleTemplate(template, {page: pages[key]}),
                     res = yield alts([
                         chRefresh,
-                        [this._chOut, pageRendered]
+                        [chOut, pageRendered]
                     ], {priority: true});
 
                 if (res.channel === chRefresh) break;   /*  or should we check for a value?
@@ -125,15 +112,22 @@ export class ChopRenderer {
         }.bind(this));
     }
 
+    protected startTransmitting() {
+        this.listenForPages();
+        this.listenForTemplates();
+    }
+
     private listenForPages() {
         go(function *() {
             let pageEvent: ChopEvent<ChopPage>,
                 page,
                 tplName: string,
                 tplSub: TemplateSubscription,
-                template: TemplateCompiled;
+                template: TemplateCompiled,
+                chIn = this.chIn(this.modelType),
+                chOut = this.chOut(this.modelType);
 
-            while ( (pageEvent = yield take(this._chContent)) !== csp.CLOSED ) {
+            while ( (pageEvent = yield take(chIn)) !== csp.CLOSED ) {
                 l(` > > I hear a page "${pageEvent.data.id}"...`);
                 // get a tpl channel (or create a new one)
                 page = pageEvent.data;
@@ -146,13 +140,13 @@ export class ChopRenderer {
                 template = tplSub.latest || (yield take(tplSub.chTpl));
                 l(` >>> >>> ...and getting a template "${template.id}"`);
                 let pageRendered = this.applySingleTemplate(template, {page});
-                yield put(this._chOut, pageRendered);
+                yield put(chOut, pageRendered);
             }
             l(`NOT LISTENING TO PAGES ANYMORE`);
         }.bind(this));
     }
 
-    private applySingleTemplate(template: TemplateCompiled, data: PageRendererData): ChopEvent<ChopPage> {
+    protected static applySingleTemplate(template: TemplateCompiled, data: PageRendererData): ChopEvent<ChopPage> {
         // todo: make it a pure function. and maybe separate rendering from data flow
         let fullData = Object.assign({}, {cfg: rendererCfg}, data);
         l(`RRRRRendering a page "${data.page.id}"`);
@@ -163,7 +157,7 @@ export class ChopRenderer {
     }
 
     private addTplSubscription(topic: string, page?: ChopPage): TemplateSubscription {
-        const {_tplSubscribers, _tplPub} = this;
+        const {_tplSubscribers} = this;
         let subscription = _tplSubscribers[topic];
 
         if (!subscription) {
@@ -174,7 +168,6 @@ export class ChopRenderer {
                 chRefresh: chan(1),
                 latest: undefined
             };
-            // csp.operations.pub.sub(_tplPub, topic, subscription.chTpl);
         }
 
         page &&

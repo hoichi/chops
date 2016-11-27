@@ -6,30 +6,28 @@
 import {isFunction} from 'lodash';
 import {Channel} from "js-csp";
 
-import {ChopData}   from './chops';
-import l            from './log';
-import {Transmitter} from "./transmitter";
+import {ChopConversion} from "./converter";
+import {ChopData}       from './chops';
+import l                from './log';
+import {Transmitter}    from "./transmitter";
 
 /*
 * Ok, plan is: we replace the Convertable ancestry with ChainMaker ancestry, re-implement converters with channel linking and then probably lose those .converts on ancestor (unless we need them everywhere).
 * */
 
-type ChopConverter = (data:ChopData) => ChopData;
-
 export class ChainMaker {
     private _convertersLocked = false;
-    private _isTransmitting = false;
     private _transmitters: Transmitter[][] = [];
-    protected converters: ChopConverter = d=>d;
+    protected converters: ChopConversion = d=>d;
 
     constructor(private subChan: string) {};
 
-    protected addTransmitter(transmitter:Transmitter) {
+    addTransmitter(transmitter:Transmitter) {
         let chain = this._transmitters[this.subChan],
             prevTrtr;
 
         if (!chain || !(prevTrtr = chain[chain.length - 1])) {
-            throw Error('Cannot add a transmitter: no emitter present to start with.');
+            throw Error('Cannot add a transmitter without an emitter to start with.');
         }
 
         prevTrtr.addListener(this.subChan, transmitter);
@@ -51,7 +49,7 @@ export class ChainMaker {
     /*
      * Adds a new converter to the end of the chain.
      * */
-    convert(newC: ChopConverter): ChainMaker {
+    convert(newC: ChopConversion): ChainMaker {
         if (this._convertersLocked) {
             throw new Error(`Converters has been locked. Adding new data transformations is impossible after a certain point, like when you’ve already ordered some further operations. Try putting your \`.convert()\` calls earlier.`);
         }
@@ -65,7 +63,7 @@ export class ChainMaker {
         return this;
     }
 
-    patch(newC: ChopConverter): ChainMaker {
+    patch(newC: ChopConversion): ChainMaker {
         // todo:    add a converter that uses something like Object.assign({}, d, newC(d))
         //          bonus points for patching with several objects
         //          (i.e. by returning an array of them)
