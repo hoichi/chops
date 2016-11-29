@@ -9,14 +9,18 @@ import l            from './log';
 import {Transmitter} from "./transmitter";
 
 export class FsWriter extends Transmitter {
-    constructor(private dir: string) {
+    constructor(private dir: string, private modelType = 'page') {
         super();
+
+        this.declareChannels({
+            input: [modelType]
+        });
     }
 
     startTransmitting() {
         // hack: that’s a dead-end transmitter, which is probably not good
         const {dir} = this,
-            chIn = this.chIn('page');
+            chIn = this.chIn(this.modelType);
 
         l(`Roger: writing to "${dir}"`);
         go(function *() {

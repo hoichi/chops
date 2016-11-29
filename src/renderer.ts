@@ -60,10 +60,12 @@ export class ChopRenderer extends Transmitter {
     private _tplSubscribers = [];
 
     constructor (tplNameOrExtractor: string | StringExtractor, private modelType = 'page') {
-
         super();
 
-        this._tplNameExtractor = isString(tplNameOrExtractor)
+        this.declareChannels({ input: [modelType]
+                             , output: [modelType, 'template'] });
+
+        this._tplNameExtractor =    isString(tplNameOrExtractor)
                                     ? () => tplNameOrExtractor
                                     : tplNameOrExtractor;
     }
@@ -157,12 +159,12 @@ export class ChopRenderer extends Transmitter {
     }
 
     private addTplSubscription(topic: string, page?: ChopPage): TemplateSubscription {
-        const {_tplSubscribers} = this;
-        let subscription = _tplSubscribers[topic];
+        const subscribers = this._tplSubscribers;
+        let subscription = subscribers[topic];
 
         if (!subscription) {
             // add a new template subscription
-            _tplSubscribers[topic] = subscription = {
+            subscribers[topic] = subscription = {
                 chTpl: chan(csp.buffers.sliding(1)),
                 pages: Object.create(null),
                 chRefresh: chan(1),

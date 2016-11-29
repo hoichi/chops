@@ -2,22 +2,8 @@
 
 # NOW
 ## Refactor!
-- [ ] implement `ChainMaker`
-- [ ] inherit from `ChainMaker`
-    - [ ] so lose `Collectable`
-- [ ] implement `Transmitter`
-- [ ] inherit from `Transmitter`
-- [ ] implement everything through `addListener()`
-
-### make it useful
-- [ ] refactor Collection piped calls
-    - [ ] `render` should return `this`
-    - [ ] `write` should return `this`
-- [ ] refactor ChoppingBoard piped calls
-    - [ ] `render` should return `this`
-    - [ ] `write` should return `this`
-- [ ] render collections themselves
-- [ ] group pages/collections by template, re-render on template update
+- [ ] Test’n’fix what I’ve refactored
+    - [ ] 'Page' is hardcoded for FsWatcher (but I use it to watch templates)
 
 ### make it right
 - [ ] types/interfaces/modules

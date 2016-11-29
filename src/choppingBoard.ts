@@ -26,13 +26,13 @@ export class ChoppingBoard<T extends ChopData> extends ChainMaker {
     }
 
     convert(conversion: ChopConversion) {
-        this.addTransmitter(new Converter(conversion));
+        this.addTransmitter(new Converter(conversion, this.subChan));
         return this;
     }
 
     collect(collection: ChopsCollection) {
         l(`collecting to...some kinda collection`);
-        this.addTransmitter(collection);
+        this.addTransmitter(collection.transmitter);
         return this;
     }
 

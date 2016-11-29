@@ -20,11 +20,11 @@ export class ChainMaker {
     private _transmitters: Transmitter[][] = [];
     protected converters: ChopConversion = d=>d;
 
-    constructor(private subChan: string) {};
+    constructor(protected subChan: string) {};
 
     addTransmitter(transmitter:Transmitter) {
         let chain = this._transmitters[this.subChan],
-            prevTrtr;
+            prevTrtr: Transmitter;
 
         if (!chain || !(prevTrtr = chain[chain.length - 1])) {
             throw Error('Cannot add a transmitter without an emitter to start with.');

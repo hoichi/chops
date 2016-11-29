@@ -3,23 +3,37 @@
  */
 
 import {Channel, chan} from "js-csp";
+import {Dictionary} from "./chops";
+
+interface ChannelDeclaration {
+    input?: string[];
+    output?: string[];
+}
 
 export abstract class Transmitter {
-    private _chIn: Channel[] = [];
-    private _chOut: Channel[] = [];
+    private _chIn: Dictionary<Channel> = {};
+    private _chOut: Dictionary<Channel> = {};
     private _listeners: Transmitter[] = [];
     private _isTransmitting = false;
 
+    protected declareChannels(lists: ChannelDeclaration) {
+        (lists.input || []).forEach(s => this._chIn[s] = chan());
+        (lists.output || []).forEach(s => this._chOut[s] = chan());
+    }
+
     protected chOut(subCh: string) {
         let ch = this._chOut[subCh];
-        return ch || (this._chOut[subCh] = chan());
+        if (!ch) throw Error(`Output channel for the type "${subCh}" is not declared`);
+        return ch;
     }
 
     protected chIn(subCh: string) {
-        return this._chIn[subCh];   // q: some tests?
+        let ch = this._chIn[subCh];
+        if (!ch) throw Error(`Input channel for the type "${subCh}" is not declared`);
+        return ch;
     }
 
-    addListener(listener: Transmitter, subCh: string) {
+    addListener(subCh: string, listener: Transmitter) {
         if (this._listeners[subCh]) {
             throw Error(`Subchannel "${subCh}" already has a listener. Them shits are not multicast, y’know.`);
         }
@@ -34,7 +48,7 @@ export abstract class Transmitter {
         }
     }
 
-    listenOnChannel(chIn, subCh) {
+    listenOnChannel(chIn: Channel, subCh: string) {
         if (this._chIn[subCh]) {
             throw Error(`Already listening on subchannel "${subCh}", this dupe is probably in error.`);
         }

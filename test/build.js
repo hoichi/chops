@@ -20,7 +20,7 @@ let templates = chops
 let testColl = chops.collection({
             by: p => (p.date || new Date())
         })
-        .patch(() => ({
+        .patchCollection(() => ({
             url: 'blog/index.html'
         }))
         .render(templates, 'blog')
