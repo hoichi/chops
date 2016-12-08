@@ -30,7 +30,7 @@ export class ChainMaker {
             throw Error('Cannot add a transmitter without an emitter to start with.');
         }
 
-        prevTrtr.addListener(this.subChan, transmitter);
+        prevTrtr.subscribe(this.subChan, transmitter);
         chain.push(transmitter);
     }
 

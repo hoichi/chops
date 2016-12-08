@@ -14,16 +14,16 @@ import {Transmitter} from "./transmitter";
 const   csp = require('js-csp');
 
 export class FsWatcher extends Transmitter {
-    constructor(private globs, private options: Dictionary<any> = {}) {
+    constructor(private globs, private options: Dictionary<any> = {}, private modelType = 'page') {
         super();
 
         this.declareChannels({
-            output: ['page']
+            output: [this.modelType]
         });
     }
 
     protected startTransmitting() {
-        let ch = this.chOut('page'),
+        let ch = this.chOut(this.modelType),
             {globs, options} = this,
             watcher = chokidar.watch(globs, options);   // that's not lazy
 

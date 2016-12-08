@@ -21,7 +21,7 @@ export class ChoppingBoard<T extends ChopData> extends ChainMaker {
     }
 
     src(globs, options) {
-        this.addEmitter(new FsWatcher(globs, options));
+        this.addEmitter(new FsWatcher(globs, options, this.subChan));
         return this;
     }
 
@@ -37,7 +37,7 @@ export class ChoppingBoard<T extends ChopData> extends ChainMaker {
     }
 
     render(templates: ChoppingBoard<ChopPage>, tplName: string | TemplateNameCb) {
-        const renderer = new ChopRenderer(tplName);
+        const renderer = new ChopRenderer(tplName, this.subChan);
         templates.addTransmitter(renderer); // listen for templates
         this.addTransmitter(renderer);      // and also for pages
         return this;
@@ -45,7 +45,7 @@ export class ChoppingBoard<T extends ChopData> extends ChainMaker {
 
     write(dir: string) {
         l(`Writing to %s`, dir);
-        this.addTransmitter(new FsWriter(dir));
+        this.addTransmitter(new FsWriter(dir, this.subChan));
         return this;
     }
 }

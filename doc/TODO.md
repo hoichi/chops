@@ -1,15 +1,24 @@
 # IN
 
 # NOW
-## Refactor!
-- [ ] Test’n’fix what I’ve refactored
-    - [ ] 'Page' is hardcoded for FsWatcher (but I use it to watch templates)
+## Make it work
+- [ ] make a Renderer transparent (emit all the templates)
+    - [ ] maybe make Transmitter transparent, if it’s fast enough. It it’s not, put it in the backlog
+- [ ] make multiple filterable Collections work
 
 ### make it right
 - [ ] types/interfaces/modules
 - [ ] unit tests (Jest?)
     - [ ] `Transmitter` and all descendants should pass unrecognized events along untouched and unhindered
+    - [ ] adding a listener shouldn’t Error when some input channels are missing
 - [ ] docs
+
+### great idea: flow refactoring
+- every transmitter has its input and output channels declared
+- if it has zero inputs it’s added at the beginning
+- if it hase some inputs the outputs for which aren’t there yet, it waits for them
+- if an output is there, it’s added as a subscriber. and, if it outputs the same type, it gets subsribed to next. So `Renderer("coll")` always subscribes to `coll` and `tplc`, `FsWriter` always subscribes to pageR &c.
+
 
 ### make it good (AKA 'backlog')
 - [ ] minimize unnecessary re-rendering

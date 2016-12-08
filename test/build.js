@@ -18,12 +18,12 @@ let templates = chops
 ;
 
 let testColl = chops.collection({
-            by: p => (p.date || new Date())
-        })
+        by: p => (p.date || new Date())
+    })
         .patchCollection(() => ({
             url: 'blog/index.html'
         }))
-        .render(templates, 'blog')
+        // .render(templates, 'blog')
         .write('build')
     ;
 
@@ -60,6 +60,7 @@ chops
                         }))
 
     .collect(testColl)
-    .render(templates, page => page.template || 'single')
+    // .render(templates, page => page.template || 'single')
     .write('build') // that’s test/build
 ;
+

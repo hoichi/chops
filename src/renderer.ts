@@ -62,13 +62,48 @@ export class ChopRenderer extends Transmitter {
     constructor (tplNameOrExtractor: string | StringExtractor, private modelType = 'page') {
         super();
 
-        this.declareChannels({ input: [modelType]
-                             , output: [modelType, 'template'] });
+        this.declareChannels({ input: [modelType, 'template']
+                             , output: [modelType] });
 
         this._tplNameExtractor =    isString(tplNameOrExtractor)
                                     ? () => tplNameOrExtractor
                                     : tplNameOrExtractor;
     }
+
+    protected startTransmitting() {
+        this.listenForPages();
+        this.listenForTemplates();
+    }
+
+    private listenForPages() {
+        go(function *() {
+            let pageEvent: ChopEvent<ChopPage>,
+                page,
+                tplName: string,
+                tplSub: TemplateSubscription,
+                template: TemplateCompiled,
+                chIn = this.chIn(this.modelType),
+                chOut = this.chOut(this.modelType);
+
+            while ( (pageEvent = yield take(chIn)) !== csp.CLOSED ) {
+                l(` > > I hear a page "${pageEvent.data.id}"...`);
+                // get a tpl channel (or create a new one)
+                page = pageEvent.data;
+                tplName = this._tplNameExtractor(page);
+                tplSub = this.getOrCreateTplSubscription(tplName, page);
+                // todo: error by timeout if template never comes`
+
+                // take a template itself (or wait for it) and render the page
+                l(` >> >> ...yielding a template "${tplName}"...`);
+                template = tplSub.latest || (yield take(tplSub.chTpl));
+                l(` >>> >>> ...and getting a template "${template.id}"`);
+                let pageRendered = this.applySingleTemplate(template, {page});
+                yield put(chOut, pageRendered);
+            }
+            l(`NOT LISTENING TO PAGES ANYMORE`);
+        }.bind(this));
+    }
+
 
     private listenForTemplates() {
         go(function *() {
@@ -80,13 +115,17 @@ export class ChopRenderer extends Transmitter {
                 template = tplEvent.data;
                 l(`  I hear a template "${template.id}"`);
 
-                let subscription = this.addTplSubscription(template.id);
+                let subscription = this.getOrCreateTplSubscription(template.id);
                 subscription.latest = template; // todo:
                                                 // - put it on a [generic] Subscription class?
                                                 // - or create an fp-style latest(chan): Channel?
                                                 //   probably more expensive, but
 
-                yield put(subscription.chTpl, template);    // q: and do we need this channel at all?
+                yield put(subscription.chTpl, template);
+                if (this.subscriber('template')) {
+                    yield put(this.chOut['template'], template);
+                }
+
                 this.reApplyTemplate(template, subscription);   // fixme: race conditions
                                                                 // maybe just delegate to a generator, like in Collection
             }
@@ -114,40 +153,6 @@ export class ChopRenderer extends Transmitter {
         }.bind(this));
     }
 
-    protected startTransmitting() {
-        this.listenForPages();
-        this.listenForTemplates();
-    }
-
-    private listenForPages() {
-        go(function *() {
-            let pageEvent: ChopEvent<ChopPage>,
-                page,
-                tplName: string,
-                tplSub: TemplateSubscription,
-                template: TemplateCompiled,
-                chIn = this.chIn(this.modelType),
-                chOut = this.chOut(this.modelType);
-
-            while ( (pageEvent = yield take(chIn)) !== csp.CLOSED ) {
-                l(` > > I hear a page "${pageEvent.data.id}"...`);
-                // get a tpl channel (or create a new one)
-                page = pageEvent.data;
-                tplName = this._tplNameExtractor(page);
-                tplSub = this.addTplSubscription(tplName, page);
-                // todo: error by timeout if template never comes`
-
-                // take a template itself (or wait for it) and render the page
-                l(` >> >> ...yielding a template "${tplName}"...`);
-                template = tplSub.latest || (yield take(tplSub.chTpl));
-                l(` >>> >>> ...and getting a template "${template.id}"`);
-                let pageRendered = this.applySingleTemplate(template, {page});
-                yield put(chOut, pageRendered);
-            }
-            l(`NOT LISTENING TO PAGES ANYMORE`);
-        }.bind(this));
-    }
-
     protected static applySingleTemplate(template: TemplateCompiled, data: PageRendererData): ChopEvent<ChopPage> {
         // todo: make it a pure function. and maybe separate rendering from data flow
         let fullData = Object.assign({}, {cfg: rendererCfg}, data);
@@ -158,13 +163,12 @@ export class ChopRenderer extends Transmitter {
         };
     }
 
-    private addTplSubscription(topic: string, page?: ChopPage): TemplateSubscription {
-        const subscribers = this._tplSubscribers;
-        let subscription = subscribers[topic];
+    private getOrCreateTplSubscription(tpl: string, page?: ChopPage): TemplateSubscription {
+        let subscription = this._tplSubscribers[tpl];
 
         if (!subscription) {
             // add a new template subscription
-            subscribers[topic] = subscription = {
+            this._tplSubscribers[tpl] = subscription = {
                 chTpl: chan(csp.buffers.sliding(1)),
                 pages: Object.create(null),
                 chRefresh: chan(1),
@@ -173,7 +177,7 @@ export class ChopRenderer extends Transmitter {
         }
 
         page &&
-            (subscription.pages[page.id] = page);
+            (subscription.pages[page.id] = page);   // fixme: move it elswhere
 
         return subscription;
     }

@@ -106,7 +106,7 @@ export class Collector extends Transmitter {
     }
 
     protected flush() {
-        putAsync(this.chIn('page'), {type: 'flush'});
+        putAsync(this.chIn('page'), {action: 'flush'});
     }
 
     protected startTransmitting() {
@@ -129,7 +129,7 @@ export class Collector extends Transmitter {
                     continue;
                 }
 
-                l(`Collecting the page "${event.data.id}"`);
+                l(`Collecting the page "${event.data && event.data.id}"`);
                 page = this.add(event.data);    // if collection is already sorted,
                                                 // the page we get is updated with `prev/next`
                                                 // and no, I don’t like how arcane it is

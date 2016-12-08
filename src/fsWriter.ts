@@ -17,7 +17,7 @@ export class FsWriter extends Transmitter {
         });
     }
 
-    startTransmitting() {
+    protected startTransmitting() {
         // hack: that’s a dead-end transmitter, which is probably not good
         const {dir} = this,
             chIn = this.chIn(this.modelType);
@@ -35,7 +35,7 @@ export class FsWriter extends Transmitter {
         }.bind(this));
     }
 
-    startReceiving() {
+    protected startReceiving(subCh: string) {
         this.startTransmitting();
     }
 }

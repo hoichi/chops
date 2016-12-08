@@ -23,7 +23,7 @@ export class Converter extends Transmitter {
         go(function *() {
             let event: ChopEvent<ChopData>,
                 chIn = this.chIn(this.modelType),
-                chOut = this.chIn(this.modelType);
+                chOut = this.chOut(this.modelType);
 
             while ((event = yield take(chIn)) !== csp.CLOSED) {
                 let {data} = event, // todo: check it it’s a data event
