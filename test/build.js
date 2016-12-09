@@ -23,7 +23,7 @@ let testColl = chops.collection({
         .patchCollection(() => ({
             url: 'blog/index.html'
         }))
-        // .render(templates, 'blog')
+        .render(templates, 'blog')
         .write('build')
     ;
 
@@ -60,7 +60,7 @@ chops
                         }))
 
     .collect(testColl)
-    // .render(templates, page => page.template || 'single')
+    .render(templates, page => page.template || 'single')
     .write('build') // that’s test/build
 ;
 

@@ -97,7 +97,7 @@ export class ChopRenderer extends Transmitter {
                 l(` >> >> ...yielding a template "${tplName}"...`);
                 template = tplSub.latest || (yield take(tplSub.chTpl));
                 l(` >>> >>> ...and getting a template "${template.id}"`);
-                let pageRendered = this.applySingleTemplate(template, {page});
+                let pageRendered = applySingleTemplate(template, {page});
                 yield put(chOut, pageRendered);
             }
             l(`NOT LISTENING TO PAGES ANYMORE`);
@@ -123,7 +123,7 @@ export class ChopRenderer extends Transmitter {
 
                 yield put(subscription.chTpl, template);
                 if (this.subscriber('template')) {
-                    yield put(this.chOut['template'], template);
+                    yield put(this.chOut('template'), tplEvent);
                 }
 
                 this.reApplyTemplate(template, subscription);   // fixme: race conditions
@@ -139,7 +139,7 @@ export class ChopRenderer extends Transmitter {
             let chOut = this.chOut(this.modelType);
 
             for (let key in pages) {
-                let pageRendered = this.applySingleTemplate(template, {page: pages[key]}),
+                let pageRendered = applySingleTemplate(template, {page: pages[key]}),
                     res = yield alts([
                         chRefresh,
                         [chOut, pageRendered]
@@ -151,16 +151,6 @@ export class ChopRenderer extends Transmitter {
 
             return;
         }.bind(this));
-    }
-
-    protected static applySingleTemplate(template: TemplateCompiled, data: PageRendererData): ChopEvent<ChopPage> {
-        // todo: make it a pure function. and maybe separate rendering from data flow
-        let fullData = Object.assign({}, {cfg: rendererCfg}, data);
-        l(`RRRRRendering a page "${data.page.id}"`);
-        return {
-            action: 'add',    // fixme: event flow doesn’ belong here at all
-            data: Object.assign({}, data.page, {content: template.render(fullData)})
-        };
     }
 
     private getOrCreateTplSubscription(tpl: string, page?: ChopPage): TemplateSubscription {
@@ -181,4 +171,14 @@ export class ChopRenderer extends Transmitter {
 
         return subscription;
     }
+}
+
+function applySingleTemplate(template: TemplateCompiled, data: PageRendererData): ChopEvent<ChopPage> {
+    // todo: make it a pure function. and maybe separate rendering from data flow
+    let fullData = Object.assign({}, {cfg: rendererCfg}, data);
+    l(`RRRRRendering a page "${data.page.id}"`);
+    return {
+        action: 'add',    // fixme: event flow doesn’ belong here at all
+        data: Object.assign({}, data.page, {content: template.render(fullData)})
+    };
 }

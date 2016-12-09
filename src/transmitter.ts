@@ -23,7 +23,7 @@ export abstract class Transmitter {
 
         (lists.input || []).forEach(s => {
             this._chIn[s] = 'standby';  // ready to accept a channel
-            this._chOut[s] || (this._chOut[s] = 'standby'); // we’re transparent to all the inputs
+            this._chOut[s] || (this._chOut[s] = chan()); // we’re transparent to all the inputs`
         });
     }
 

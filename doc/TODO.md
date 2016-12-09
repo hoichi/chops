@@ -2,16 +2,26 @@
 
 # NOW
 ## Make it work
-- [ ] make a Renderer transparent (emit all the templates)
-    - [ ] maybe make Transmitter transparent, if it’s fast enough. It it’s not, put it in the backlog
+- [ ] where’s my `blog/index.html`?
+- [x] make a Renderer transparent (emit all the templates)
 - [ ] make multiple filterable Collections work
 
 ### make it right
 - [ ] types/interfaces/modules
-- [ ] unit tests (Jest?)
+- [ ] fix:
+    - [ ] `.patch()`
+- [ ] unit tests (Jest or Ava?)
     - [ ] `Transmitter` and all descendants should pass unrecognized events along untouched and unhindered
     - [ ] adding a listener shouldn’t Error when some input channels are missing
 - [ ] docs
+
+### checks and debuggability
+- [ ] check channel types
+- [ ] abstract putting so it’s more debuggable
+- [ ] more info on sending stack
+- [ ] refactor subscriptions (combine chOuts and subscribers)
+    - [ ] and maybe create channels on subscribers actually
+
 
 ### great idea: flow refactoring
 - every transmitter has its input and output channels declared
