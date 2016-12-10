@@ -30,7 +30,7 @@ export class FsWatcher extends Transmitter {
         l(`Watching for ${this.globs} inside ${process.cwd()}`);
         /* todo:
          * - options defaults
-         * - an option to add pre-asterisk part of the globs to the cwd.
+         * - an option to addSorted pre-asterisk part of the globs to the cwd.
          *   or am I outsmarting `fs.watch()`, `node-glob` et. al?
          * */
 
@@ -76,7 +76,7 @@ function packAChop(event, path, cwd = '.'): ChopEvent<ChopPage> {
             process.chdir(xCwd);
         }
     } else if (event === 'unlink') {
-        // nothing to add to the result
+        // nothing to addSorted to the result
     }
 
     return {

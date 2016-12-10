@@ -24,11 +24,11 @@ So we can start with a linear prototype that simply convert singles to singles a
 
 Collection:
 - accepts events
-- counts `add`s
+- counts `addSorted`s
 - if a `.filter()` was set
     - immediately passes down the pages that don’t satisfy the filter
     - those that do, collects, hinders, mutates
-- waits for `ready` and the required amount of `add`s
+- waits for `ready` and the required amount of `addSorted`s
 - sorts and updates pages (it it wasn’t done in the process)
 - passes down all the pages it collected
 - passes down the collection
@@ -45,7 +45,7 @@ Any page has data of all the collections it’s added to, so you can use it in t
 
 ### C. Data Flow
 
-Listens: to source changes (`add`/`change`/`remove`)
+Listens: to source changes (`addSorted`/`change`/`remove`)
 
 
 ## Data

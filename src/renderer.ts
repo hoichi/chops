@@ -157,7 +157,7 @@ export class ChopRenderer extends Transmitter {
         let subscription = this._tplSubscribers[tpl];
 
         if (!subscription) {
-            // add a new template subscription
+            // addSorted a new template subscription
             this._tplSubscribers[tpl] = subscription = {
                 chTpl: chan(csp.buffers.sliding(1)),
                 pages: Object.create(null),

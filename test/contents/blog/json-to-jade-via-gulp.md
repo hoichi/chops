@@ -3,6 +3,7 @@ permalink: false
 published: false
 title: Feeding JSON data to Jade templates via a Gulp script
 slug: json-to-jade-via-gulp
+category: blog
 ---
 
 Suppose you build something with Gulp using Jade templates. Suppose you have some data you've put to JSON. Lots of reason to do that. As succint as Jade is compared to HTML it's still not succint enough if you want to prototype a long list of remotely complex data. Any changes you want to make to the structure of your data or the presentation thereof, and you have to copy and paste all over again. And forget about storing big arrays in Jade itself, because Jade doesn't seem to support multi-line JavaScript (unless we're talking about output to `<script>` tags.

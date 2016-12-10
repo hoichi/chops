@@ -27,7 +27,7 @@ export class ChainMaker {
             prevTrtr: Transmitter;
 
         if (!chain || !(prevTrtr = chain[chain.length - 1])) {
-            throw Error('Cannot add a transmitter without an emitter to start with.');
+            throw Error('Cannot addSorted a transmitter without an emitter to start with.');
         }
 
         prevTrtr.subscribe(this.subChan, transmitter);
@@ -40,7 +40,7 @@ export class ChainMaker {
         if (!chain) {
             this._transmitters[this.subChan] = chain = [];
         } else if (chain.length) {
-            throw Error('You can only add an emitter to a start of the chain.');
+            throw Error('You can only addSorted an emitter to a start of the chain.');
         }
 
         chain.push(emitter);
@@ -64,7 +64,7 @@ export class ChainMaker {
     }
 
     patch(newC: ChopConversion): ChainMaker {
-        // todo:    add a converter that uses something like Object.assign({}, d, newC(d))
+        // todo:    addSorted a converter that uses something like Object.assign({}, d, newC(d))
         //          bonus points for patching with several objects
         //          (i.e. by returning an array of them)
         return this;

@@ -5,7 +5,7 @@ import {go, put, putAsync, take} from 'js-csp';
 import * as csp from 'js-csp';
 import {sortedLastIndexBy} from 'lodash';
 
-import {ChopPage, ChopEvent} from "./chops";
+import {ChopPage, ChopEvent, ChopData} from "./chops";
 import l from './log';
 
 import {ChainMaker} from "./chainmaker";
@@ -40,6 +40,11 @@ export class ChopsCollection extends ChainMaker {
         return this;
     }
 
+    filter(fltrFn: (ChopData) => boolean) {
+        this._collector.filter = fltrFn;
+        return this;
+    }
+
     render(templates: ChoppingBoard<ChopPage>, tplName: string | TemplateNameCb) {
         // hack: I think that’s what inheriting directly from Transmitter is
         const renderer = new ChopRenderer(tplName, 'collection');
@@ -56,17 +61,18 @@ export class ChopsCollection extends ChainMaker {
 }
 
 export class Collector extends Transmitter {
+    private _data = {};
+    private _isFlushed = false;
+
     private _sortOptions: SortOptions;
     private _sortedList: ChopPage[];
 
     private _filter = (chop) => true;
-    private _filteredList: ChopPage[];
-
     private _limit: Number | null = null;
 
-    private _isFlushed = false;
-
-    private _data = {};
+    set filter(fltrFn) {
+        this._filter = fltrFn;
+    }
 
     constructor(options: SortOptions) {
         super();
@@ -81,32 +87,6 @@ export class Collector extends Transmitter {
         };
 
         this._sortedList = [];
-        this._filteredList = [];
-    }
-
-    protected add(page: ChopPage) {
-        // todo: check for dupes
-        //       or just implement .replace() for the 'change' event
-
-        let sortBy = this._sortOptions.by,
-            updatedPage = insertSorted(this._sortedList, page, sortBy);
-
-        if (this._filter(updatedPage)) {
-            // fixme: we just go and override prev/next.
-            // might be fine for most of the cases. or not
-            updatedPage = insertSorted(this._filteredList, page, sortBy);
-        }
-
-        return updatedPage;
-    }
-
-    patchData(cb) {
-        this._data = Object.assign({}, this._data, cb(this._data));
-        return this;
-    }
-
-    protected flush() {
-        putAsync(this.chIn('page'), {action: 'flush'});
     }
 
     protected startTransmitting() {
@@ -130,9 +110,15 @@ export class Collector extends Transmitter {
                 }
 
                 l(`Collecting the page "${event.data && event.data.id}"`);
-                page = this.add(event.data);    // if collection is already sorted,
-                                                // the page we get is updated with `prev/next`
-                                                // and no, I don’t like how arcane it is
+                page = event.data;
+                if (!this._filter(page)) {
+                    yield put(chOutPg, event);  // let it go, it’s not yours
+                    continue;
+                }
+
+                page = this.addSorted(page);  // if collection is already sorted,
+                                        // the page we get is updated with `prev/next`
+                                        // and no, I don’t like how arcane it is
 
                 if (this._isFlushed) { // green light, we can send it downstream
                     // emit the current page
@@ -156,6 +142,22 @@ export class Collector extends Transmitter {
         }.bind(this));
     }
 
+    protected addSorted(page: ChopPage) {
+        // todo: check for dupes
+        //       or just implement .replace() for the 'change' event
+
+        return insertSorted(this._sortedList, page, this._sortOptions.by);
+    }
+
+    patchData(cb) {
+        this._data = Object.assign({}, this._data, cb(this._data));
+        return this;
+    }
+
+    protected flush() {
+        putAsync(this.chIn('page'), {action: 'flush'});
+    }
+
     private *flushAllPages() {
         let pages = this._sortedList,
             len = pages.length,
@@ -164,7 +166,7 @@ export class Collector extends Transmitter {
 
         for (let i = 0; i < len; i++) {
             yield put(chOut, {
-                action: 'add',
+                action: 'addSorted',
                 type: 'PAGE',
                 data: pages[i]
             });
@@ -174,21 +176,21 @@ export class Collector extends Transmitter {
     }
 }
 
-function insertSorted(list, page, sortBy) {
+function insertSorted(list, el, sortBy) {
     // todo: FP-ize
-    let key = sortBy(page),
+    let key = sortBy(el),
         idx = sortedLastIndexBy(list, key, sortBy);
 
     // insert in the sorted position
-    list.splice(idx, 0, page);
+    list.splice(idx, 0, el);
 
     // return prev/next (link to a page or null)
     let idxPrev = idx - 1,
         idxNext = idx + 1,
-        updatedPage = Object.assign({}, page, {
+        updatedPage = {...el,
             prev: idxPrev >= 0 ? list[idxPrev] : null,
             next: idxNext < list.length ? list[idxNext] : null
-        });
+        };
 
     return updatedPage;
 }

@@ -12,7 +12,8 @@ block content
     if short_desc
         p.b-desc!= short_desc
 
-    each post in posts
+    each post in page.posts
+        - console.log(post.title);
         .b-post
             header.b-post__header
                 span.b-post__date= cfg.date_short(post.date)

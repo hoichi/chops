@@ -2,14 +2,32 @@
 
 # NOW
 ## Make it work
-- [ ] where’s my `blog/index.html`?
-- [x] make a Renderer transparent (emit all the templates)
-- [ ] make multiple filterable Collections work
+- [ ] test if multiple filterable collections work
+    - [ ] at least check that they don’t break anything
+    - [ ] does `filter` introduces race conditions?
+- [ ] use real events, like `addSorted`, `change` and `remove`
+- [ ] flush Collectors on `ready`
 
-### make it right
-- [ ] types/interfaces/modules
+### Fixes
+- [x] where’s my `blog/index.html`?
+- [ ] update and send neighboring pages on sortedInsert
+
+
+## make it right
+### refactorings
+- [ ] abstract putting so it’s more debuggable
+- [ ] refactor subscriptions (combine chOuts and subscribers)
+    - [ ] and maybe create channels on subscribers actually
+- [ ] abstract flushing
+    - [ ] render pages on flushing a renderer
+    - [ ] update 'prev/next' on flushing a collector
+
+### fixes
 - [ ] fix:
     - [ ] `.patch()`
+
+### more
+- [ ] types/interfaces/modules
 - [ ] unit tests (Jest or Ava?)
     - [ ] `Transmitter` and all descendants should pass unrecognized events along untouched and unhindered
     - [ ] adding a listener shouldn’t Error when some input channels are missing
@@ -17,13 +35,10 @@
 
 ### checks and debuggability
 - [ ] check channel types
-- [ ] abstract putting so it’s more debuggable
 - [ ] more info on sending stack
-- [ ] refactor subscriptions (combine chOuts and subscribers)
-    - [ ] and maybe create channels on subscribers actually
 
 
-### great idea: flow refactoring
+### great idea: flow refactoring`
 - every transmitter has its input and output channels declared
 - if it has zero inputs it’s added at the beginning
 - if it hase some inputs the outputs for which aren’t there yet, it waits for them

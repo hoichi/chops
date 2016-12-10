@@ -18,8 +18,9 @@ let templates = chops
 ;
 
 let testColl = chops.collection({
-        by: p => (p.date || new Date())
-    })
+            by: p => (p.date || new Date())
+        })
+        .filter(page => page.category && (page.category === 'blog'))
         .patchCollection(() => ({
             url: 'blog/index.html'
         }))
@@ -32,7 +33,6 @@ chops
     .src('**/*', {cwd: 'contents'})
     /* necessary defaults */
     .convert(page =>    Object.assign({
-                            category: {title: 'blog', slug: 'blog'},
                             date: new Date(),
                             published: true,
                             title: 'Untitled'
@@ -52,13 +52,15 @@ chops
     .convert(page =>    Object.assign({}, page, {
                             url: Path.join(
                                     page.url || Path.join(
-                                        page.category.slug || page.path.dir,
+                                        page.category || page.path.dir,
                                         page.slug
                                     ),
                                     'index.html'
                                 ) || 'untitled/index.html'
                         }))
-
+    .convert(page =>    Object.assign({}, page, {
+                            globalProperty: 'some global shit'
+                        }))
     .collect(testColl)
     .render(templates, page => page.template || 'single')
     .write('build') // that’s test/build
