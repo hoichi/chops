@@ -27,7 +27,7 @@ export class ChainMaker {
             prevTrtr: Transmitter;
 
         if (!chain || !(prevTrtr = chain[chain.length - 1])) {
-            throw Error('Cannot addSorted a transmitter without an emitter to start with.');
+            throw Error('Cannot add a transmitter without an emitter to start with.');
         }
 
         prevTrtr.subscribe(this.subChan, transmitter);

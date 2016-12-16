@@ -2,16 +2,19 @@
 
 # NOW
 ## Make it work
-- [ ] test if multiple filterable collections work
-    - [ ] at least check that they don’t break anything
-    - [ ] does `filter` introduces race conditions?
-- [ ] use real events, like `addSorted`, `change` and `remove`
 - [ ] flush Collectors on `ready`
+    - [x] emit from FsWatcher
+    - [x] pass through Converter (test it!)
+    - [ ] receive in Collector
+        - [x] write
+        - [ ] test
+- [ ] test if multiple filterable collections work
+    - [ ] find the lost pages
 
-### Fixes
-- [x] where’s my `blog/index.html`?
-- [ ] update and send neighboring pages on sortedInsert
 
+## better issue planning
+- [ ] move issues to GH
+- [ ] probably use [gh-board](https://github.com/philschatz/gh-board)
 
 ## make it right
 ### refactorings
@@ -22,9 +25,11 @@
     - [ ] render pages on flushing a renderer
     - [ ] update 'prev/next' on flushing a collector
 
-### fixes
-- [ ] fix:
-    - [ ] `.patch()`
+## Fixes for later
+- [ ] update and send neighboring pages on sortedInsert
+- [ ] does `filter` introduces race conditions? what if we call it after we’ve started transmitting.
+- [ ] use real events, like `add`, `change` and `remove`
+- [ ] `.patch()`
 
 ### more
 - [ ] types/interfaces/modules
@@ -44,10 +49,7 @@
 - if it hase some inputs the outputs for which aren’t there yet, it waits for them
 - if an output is there, it’s added as a subscriber. and, if it outputs the same type, it gets subsribed to next. So `Renderer("coll")` always subscribes to `coll` and `tplc`, `FsWriter` always subscribes to pageR &c.
 
-
 ### make it good (AKA 'backlog')
-- [ ] minimize unnecessary re-rendering
-    - [ ] send `ready` from chokidar down the line (and send the number of files — or the whole fucking tree with it
 - [ ] watch for template partials
 - [ ] optimize the `src().write()` case (use plain `cp`)
 - [ ] check for sent/expected IDs mismatch (see waiting for templates). use timeouts, I guess.

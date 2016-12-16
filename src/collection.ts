@@ -32,8 +32,13 @@ export class ChopsCollection extends ChainMaker {
         this.addEmitter(this._collector);
     }
 
-    get collector() { return this._collector; }
-    get transmitter() { return this._collector; }
+    get collector() {
+        return this._collector;
+    }
+
+    get transmitter() {
+        return this._collector;
+    }
 
     patchCollection(cb) {
         this._collector.patchData(cb);
@@ -65,7 +70,10 @@ export class Collector extends Transmitter {
     private _isFlushed = false;
 
     private _sortOptions: SortOptions;
-    private _sortedList: ChopPage[];
+    private _sortedList:  ChopPage[];
+
+    private _pagesExpected = Infinity;
+    private _pagesArrived  = 0;
 
     private _filter = (chop) => true;
     private _limit: Number | null = null;
@@ -91,52 +99,56 @@ export class Collector extends Transmitter {
 
     protected startTransmitting() {
         l('Collection is transmitting. Input channel is...');
-        setTimeout(this.flush.bind(this), 3000);
 
         go(function *() {
             let event: ChopEvent<ChopPage>,
                 page,
                 chIn = this.chIn('page'),
-                chOutPg= this.chOut('page'),
-                chOutColl = this.chOut('collection');
+                chOutPg = this.chOut('page');
 
             while ((event = yield take(chIn)) !== csp.CLOSED) {
-                if (event.action === 'flush') {
+                let {action} = event;
+
+                if (action === 'flush') {
                     l('About to flush ’em pages');
                     // emit the pages. and don’t stop till we’ve sent ’em all
                     yield* this.flushAllPages();
+                    yield* this.sendCollection();
                     this._isFlushed = true;
                     continue;
                 }
 
-                l(`Collecting the page "${event.data && event.data.id}"`);
-                page = event.data;
-                if (!this._filter(page)) {
-                    yield put(chOutPg, event);  // let it go, it’s not yours
+                if (action === 'ready') {
+                    this._pagesExpected = event.count;
+                    this.flushIfAllPagesArrived();
                     continue;
                 }
 
-                page = this.addSorted(page);  // if collection is already sorted,
-                                        // the page we get is updated with `prev/next`
-                                        // and no, I don’t like how arcane it is
+                if (action === 'add') {
+                    this._pagesArrived++;
+                    this.flushIfAllPagesArrived();
+                }
 
-                if (this._isFlushed) { // green light, we can send it downstream
-                    // emit the current page
-                    yield put(chOutPg, {
-                        action: event.action,
-                        type: 'PAGE',
-                        data: page
-                    });
+                if (~['add', 'change'].indexOf(action)) {
+                    l(`Collecting the page "${event.data && event.data.id}"`);
+                    page = event.data;
+                    if (!this._filter(page)) {
+                        yield put(chOutPg, event);  // let it go, it’s not yours
+                        continue;
+                    }
 
-                    // emit the collection itself
-                    // let’s keep the _sortedList private so it doesn’t get overridden
-                    // by ‘user space’ calls like `update` or `patchData`
-                    this.patchData(() => ({posts: this._sortedList}));
-                    yield put( chOutColl, {
-                        type: 'collection',
-                        action: 'change',
-                        data: this._data
-                    });
+                    page = this.addSorted(page);
+                    this.flushIfAllPagesArrived();
+
+                    if (this._isFlushed) { // green light, we can send it downstream
+                        // emit the current page
+                        yield put(chOutPg, {
+                            action: action,
+                            type: 'PAGE',
+                            data: page
+                        });
+                        yield* this.sendCollection();
+                    }
                 }
             }
         }.bind(this));
@@ -154,8 +166,10 @@ export class Collector extends Transmitter {
         return this;
     }
 
-    protected flush() {
-        putAsync(this.chIn('page'), {action: 'flush'});
+    protected flushIfAllPagesArrived() {
+        if (this._pagesArrived >= this._pagesExpected) {
+            putAsync(this.chIn('page'), {action: 'flush'});
+        }
     }
 
     private *flushAllPages() {
@@ -166,13 +180,25 @@ export class Collector extends Transmitter {
 
         for (let i = 0; i < len; i++) {
             yield put(chOut, {
-                action: 'addSorted',
+                action: 'add',
                 type: 'PAGE',
                 data: pages[i]
             });
         }
 
         return;
+    }
+
+    private *sendCollection() {
+        // let’s keep the _sortedList private so it doesn’t get overridden
+        // by ‘user space’ calls like `update` or `patchData`
+        this.patchData(() => ({posts: this._sortedList}));
+
+        yield put(this.chOut('collection'), {
+            type: 'collection',
+            action: 'change',
+            data: this._data
+        });
     }
 }
 
@@ -187,7 +213,8 @@ function insertSorted(list, el, sortBy) {
     // return prev/next (link to a page or null)
     let idxPrev = idx - 1,
         idxNext = idx + 1,
-        updatedPage = {...el,
+        updatedPage = {
+            ...el,
             prev: idxPrev >= 0 ? list[idxPrev] : null,
             next: idxNext < list.length ? list[idxNext] : null
         };

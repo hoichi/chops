@@ -14,12 +14,15 @@ import {Transmitter} from "./transmitter";
 const   csp = require('js-csp');
 
 export class FsWatcher extends Transmitter {
+    private _fileCount = 0;
+
     constructor(private globs, private options: Dictionary<any> = {}, private modelType = 'page') {
         super();
 
         this.declareChannels({
             output: [this.modelType]
         });
+
     }
 
     protected startTransmitting() {
@@ -39,11 +42,18 @@ export class FsWatcher extends Transmitter {
                 if (event === 'add' || event === 'change') {
                     l(`Emitting "${event}" for "${path}"`);
                     csp.putAsync(ch, packAChop(event, path, options && options['cwd']));
+
+                    if (event === 'add') {
+                        this._fileCount++;
+                    }
                 }
             })
             .on('ready', () => {
                 console.log(`And the first pass is done.`);
-                // todo: ...
+                csp.putAsync(ch, {
+                    action: 'ready',
+                    count: this._fileCount
+                });
             })
             .on('error', err => {
                 csp.putAsync(ch, new Error(`Chokidar error: ${err}`));

@@ -26,7 +26,13 @@ export class Converter extends Transmitter {
                 chOut = this.chOut(this.modelType);
 
             while ((event = yield take(chIn)) !== csp.CLOSED) {
-                let {data} = event, // todo: check it it’s a data event
+                let action = event.action;
+                if (['add', 'change', 'remove'].indexOf(action) === -1) {
+                    yield put(chOut, event);
+                    continue;
+                }
+
+                let {data} = event,
                     eventOut = Object.assign({}, event, {
                         data: this.conversion(data)
                     });

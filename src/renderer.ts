@@ -112,22 +112,26 @@ export class ChopRenderer extends Transmitter {
 
             l(`Listening for templates`);
             while ( (tplEvent = yield take(this.chIn('template'))) !== csp.CLOSED ) {
-                template = tplEvent.data;
-                l(`  I hear a template "${template.id}"`);
+                if (~[`add`, `change`].indexOf(tplEvent.action)) {
+                    template = tplEvent.data;
+                    l(`  I hear a template "${template.id}"`);
 
-                let subscription = this.getOrCreateTplSubscription(template.id);
-                subscription.latest = template; // todo:
-                                                // - put it on a [generic] Subscription class?
-                                                // - or create an fp-style latest(chan): Channel?
-                                                //   probably more expensive, but
+                    let subscription = this.getOrCreateTplSubscription(template.id);
+                    subscription.latest = template; // todo:
+                                                    // - put it on a [generic] Subscription class?
+                                                    // - or create an fp-style latest(chan): Channel?
+                                                    //   probably more expensive, but
 
-                yield put(subscription.chTpl, template);
+                    yield put(subscription.chTpl, template);
+                    this.reApplyTemplate(template, subscription);   // fixme: race conditions
+                                                                    // maybe just delegate to a generator, like in Collection
+                }
+
+                // pass the event along
                 if (this.subscriber('template')) {
                     yield put(this.chOut('template'), tplEvent);
                 }
 
-                this.reApplyTemplate(template, subscription);   // fixme: race conditions
-                                                                // maybe just delegate to a generator, like in Collection
             }
         }.bind(this));
     }

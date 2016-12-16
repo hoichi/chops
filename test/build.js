@@ -26,6 +26,22 @@ let testColl = chops.collection({
         }))
         .render(templates, 'blog')
         .write('build')
+    , allColl = chops.collection({
+            by: p => (p.date || new Date())
+        })
+        .filter(page => true)
+    , allColl2 = chops.collection({
+            by: p => (p.date || new Date())
+        })
+        .filter(page => true)
+    , noneColl = chops.collection({
+            by: p => (p.date || new Date())
+        })
+        .filter(page => false)
+    , noneColl2 = chops.collection({
+            by: p => (p.date || new Date())
+        })
+        .filter(page => false)
     ;
 
 // pages
@@ -61,6 +77,10 @@ chops
     .convert(page =>    Object.assign({}, page, {
                             globalProperty: 'some global shit'
                         }))
+    // .collect(allColl)
+    // .collect(allColl2)
+    // .collect(noneColl)
+    // .collect(noneColl2)
     .collect(testColl)
     .render(templates, page => page.template || 'single')
     .write('build') // that’s test/build

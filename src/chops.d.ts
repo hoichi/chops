@@ -13,8 +13,9 @@ type ChopId = number | string;
 
 interface ChopEvent<T extends ChopData> {   // do we actually use it anywhere?
     action: string;     // TODO: [string] enum
-    type?: string;      // HACK: should be required when we transition fully
-    data: T;
+    type?: string;
+    data?: T;
+    count?: number;     // HACK: I think count should be defined on a separate descendant interface
 }
 
 export interface ChopPageWritable {
