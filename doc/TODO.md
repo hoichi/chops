@@ -1,31 +1,47 @@
 # IN
 
 # NOW
-### make it useful
-- [x] templates
-    - [x] watch
-    - [x] compile
-    - [x] render pages w/templates
-- [ ] collections
-    - [ ] collect pages
-    - [ ] csp.put()
-    - [ ] render collections
-    
-### make it right
+## better issue planning
+- [ ] move issues to GH
+- [ ] probably use [gh-board](https://github.com/philschatz/gh-board)
+
+## make it right
+### refactorings
+- [ ] abstract putting so it’s more debuggable
+- [ ] refactor subscriptions (combine chOuts and subscribers)
+    - [ ] and maybe create channels on subscribers actually
+- [ ] abstract flushing
+    - [ ] render pages on flushing a renderer
+    - [ ] update 'prev/next' on flushing a collector
+
+## Fixes for later
+- [ ] update and send neighboring pages on sortedInsert
+- [ ] does `filter` introduces race conditions? what if we call it after we’ve started transmitting.
+- [ ] use real events, like `add`, `change` and `remove`
+- [ ] `.patch()`
+
+### more
 - [ ] types/interfaces/modules
-- [ ] unit tests
-    - [ ] look up that Ava/mock-fs recipe
-    - [ ] or try to use tape
+- [ ] unit tests (Jest or Ava?)
+    - [ ] `Transmitter` and all descendants should pass unrecognized events along untouched and unhindered
+    - [ ] adding a listener shouldn’t Error when some input channels are missing
 - [ ] docs
 
+### checks and debuggability
+- [ ] check channel types
+- [ ] more info on sending stack
+
+
+### great idea: flow refactoring`
+- every transmitter has its input and output channels declared
+- if it has zero inputs it’s added at the beginning
+- if it hase some inputs the outputs for which aren’t there yet, it waits for them
+- if an output is there, it’s added as a subscriber. and, if it outputs the same type, it gets subsribed to next. So `Renderer("coll")` always subscribes to `coll` and `tplc`, `FsWriter` always subscribes to pageR &c.
+
 ### make it good (AKA 'backlog')
-- [ ] minimize unnecessary re-rendering
-    - [ ] send `ready` from chokidar down the line (and send the number of files — or the whole fucking tree with it
-    - [ ] wait for collections to fill up before emitting (or at least sanctioning) anything down the line. Maybe even `prev/next` setting should be lazy, so we shouldn’t emit `PageCollected`s before collection is go.
 - [ ] watch for template partials
 - [ ] optimize the `src().write()` case (use plain `cp`)
-- [ ] check for sent/expected IDs mismatch (see templates). use timeouts, I guess.
-    - [ ] 
+- [ ] check for sent/expected IDs mismatch (see waiting for templates). use timeouts, I guess.
 
 ### put it out
 - [ ] publish typings for js-csp

@@ -6,14 +6,21 @@ import {Channel, go, take}  from 'js-csp';
 
 import {ChopEvent, ChopPage} from "./chops";
 import l            from './log';
+import {Transmitter} from "./transmitter";
 
-export class FsWriter {
-    constructor(private chIn: Channel, private dir: string) {
-        this.startWriting();
+export class FsWriter extends Transmitter {
+    constructor(private dir: string, private modelType = 'page') {
+        super();
+
+        this.declareChannels({
+            input: [modelType]
+        });
     }
 
-    startWriting(): void {
-        let {chIn, dir} = this;
+    protected startTransmitting() {
+        // hack: that’s a dead-end transmitter, which is probably not good
+        const {dir} = this,
+            chIn = this.chIn(this.modelType);
 
         l(`Roger: writing to "${dir}"`);
         go(function *() {
@@ -21,11 +28,20 @@ export class FsWriter {
 
             while ( (event = yield take(chIn)) !== csp.CLOSED
                     && !(event instanceof Error) ) {     // ← do we even get here if we throw?
-                // todo: check event type
+
+                if (['add', 'change'].indexOf(event.action) === -1) {
+                    continue;
+                    // todo: emit something so we can stop the non-watch build`
+                }
+
                 let page = event.data;
                 writeAPage(path.resolve(dir, page.url), page.content);
             }
-        });
+        }.bind(this));
+    }
+
+    protected startReceiving(subCh: string) {
+        this.startTransmitting();
     }
 }
 

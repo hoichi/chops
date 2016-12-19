@@ -29,19 +29,18 @@
     "chokidar": "^1.6.0",
     "front-matter": "^2.1.0",
     "js-csp": "^0.7.3",
-    "lodash": "^4.16.1",
+    "lodash": "^4.16.6",
     "mkpath": "^1.0.0",
-    "rxjs-es": "^5.0.0-beta.12"
+    "ramda": "^0.22.1"
   },
   "devDependencies": {
-    "@reactivex/rxjs": "^5.0.0-beta.12",
     "@types/chokidar": "^1.4.29",
     "@types/node": "^6.0.40",
-    "ava": "^0.16.0",
+    "ava": "^0.17.0",
     "markdown-it": "^8.0.1",
     "mock-fs": "^3.11.0",
     "pug": "^2.0.0-beta6",
-    "typescript": "^2.0.3"
+    "typescript": "^2.1.4"
   },
   "ava": {
     "files": [

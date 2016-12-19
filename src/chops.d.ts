@@ -12,8 +12,10 @@ interface ChopData {
 type ChopId = number | string;
 
 interface ChopEvent<T extends ChopData> {   // do we actually use it anywhere?
-    type: string;  // todo: [string] enum
-    data: T;
+    action: string;     // TODO: [string] enum
+    type?: string;
+    data?: T;
+    count?: number;     // HACK: I think count should be defined on a separate descendant interface
 }
 
 export interface ChopPageWritable {
@@ -61,26 +63,10 @@ interface ContentMeta {
     [k: string]: any;
 }
 
-/*
- * after adding the page to [primary] collection
- * */
-interface PageMetaCollected {
-    nextUrl?: string;
-    prevUrl?: string;
-    collection?: ChopsCollection;
-}
-
-
 interface ChopSite {
     [k: string]: any;
 }
 
-interface ChopsCollection {
-    sortBy: (el) => boolean | string;
-    order: 'asc' | 'desc';
-    sortedList: PageMetaCollected[];   // in
-    dic: Dictionary<PageMetaCollected>;
-}
 
 interface Dictionary<T> {
     [key:string]: T;

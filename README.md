@@ -31,7 +31,7 @@ The lean mean static... builder... thing. NOT ready for production. Or for showi
     .dest('blog/');
 
     site.src('...')
-        .patch(
+        .patchData(
             ({content}) => {
                  let {attributes, body} = fm(content);
                  return {meta: attributes, content: body}
