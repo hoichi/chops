@@ -186,6 +186,12 @@ export class Collector extends Transmitter {
             });
         }
 
+        // let’s pass it _after_ we’ve sent all the pages, just to lower the jitter`
+        yield put(chOut, {
+            action: 'ready',
+            count: this._pagesArrived
+        });
+
         return;
     }
 

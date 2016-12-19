@@ -1,17 +1,6 @@
 # IN
 
 # NOW
-## Make it work
-- [ ] flush Collectors on `ready`
-    - [x] emit from FsWatcher
-    - [x] pass through Converter (test it!)
-    - [ ] receive in Collector
-        - [x] write
-        - [ ] test
-- [ ] test if multiple filterable collections work
-    - [ ] find the lost pages
-
-
 ## better issue planning
 - [ ] move issues to GH
 - [ ] probably use [gh-board](https://github.com/philschatz/gh-board)

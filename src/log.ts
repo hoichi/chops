@@ -13,5 +13,5 @@ export default function log(...args: any[]) {
     return len ? args[len-1] : null;    // might come handy for inline calls
 }
 
-export function on() {_isOn = true; };
-export function off() {_isOn = false; };
+export function on() {_isOn = true; }
+export function off() {_isOn = false; }

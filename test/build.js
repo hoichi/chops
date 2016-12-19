@@ -77,10 +77,10 @@ chops
     .convert(page =>    Object.assign({}, page, {
                             globalProperty: 'some global shit'
                         }))
-    // .collect(allColl)
-    // .collect(allColl2)
-    // .collect(noneColl)
-    // .collect(noneColl2)
+    .collect(allColl)
+    .collect(allColl2)
+    .collect(noneColl)
+    .collect(noneColl2)
     .collect(testColl)
     .render(templates, page => page.template || 'single')
     .write('build') // that’s test/build

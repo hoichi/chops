@@ -86,7 +86,12 @@ export class ChopRenderer extends Transmitter {
                 chOut = this.chOut(this.modelType);
 
             while ( (pageEvent = yield take(chIn)) !== csp.CLOSED ) {
-                l(` > > I hear a page "${pageEvent.data.id}"...`);
+                if (['add', 'change'].indexOf(pageEvent.action) === -1) {
+                    put(chOut, pageEvent);
+                    continue;
+                }
+
+                l(` > > I hear a page "${pageEvent.data && pageEvent.data.id}"...`);
                 // get a tpl channel (or create a new one)
                 page = pageEvent.data;
                 tplName = this._tplNameExtractor(page);

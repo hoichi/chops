@@ -28,7 +28,12 @@ export class FsWriter extends Transmitter {
 
             while ( (event = yield take(chIn)) !== csp.CLOSED
                     && !(event instanceof Error) ) {     // ← do we even get here if we throw?
-                // todo: check event action
+
+                if (['add', 'change'].indexOf(event.action) === -1) {
+                    continue;
+                    // todo: emit something so we can stop the non-watch build`
+                }
+
                 let page = event.data;
                 writeAPage(path.resolve(dir, page.url), page.content);
             }
