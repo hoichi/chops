@@ -1,0 +1,20 @@
+extends ./page/page.jade
+//-
+block h__title
+    title= `i.i / ${page.category.title} / ${page.title}`
+
+block header
+    .b-Masthead__breadcrumbs
+        a(href='/') hoichi.io
+        = ' / '
+        a(href='/' + page.category.slug + '/')= page.category.title
+        = ' / '
+    h1= page.title
+block content
+    block content__article
+        article
+            != page.content
+    block content__footer
+        footer.b-Content__meta
+            .b-Content__meta-date= cfg.date_short(page.date)
+

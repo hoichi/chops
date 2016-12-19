@@ -34,3 +34,13 @@ node_modules
 
 # No idea
 .idea/
+
+# The build
+lib/
+/build/
+
+/.imdone/
+/_tmp/
+/test/build/
+/yarn.lock
+/.vscode/

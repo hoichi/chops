@@ -1,14 +1,15 @@
 {
-  "name": "grinder",
+  "name": "chops",
   "version": "0.1.0",
   "description": "A lean mean static... build... thing",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
-    "test": "test"
+    "dev-install": "node_modules/typings/dist/bin.js install",
+    "test": "tsc & ava"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hoichi/grinder.git"
+    "url": "git+https://github.com/hoichi/chops.git"
   },
   "keywords": [
     "static",
@@ -19,11 +20,34 @@
   "author": "Sergey Samokhov <hi@hoichi.io> (https://hoichi.io)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/hoichi/grinder/issues"
+    "url": "https://github.com/hoichi/chops/issues"
   },
-  "homepage": "https://github.com/hoichi/grinder#readme",
+  "homepage": "https://github.com/hoichi/chops#readme",
   "dependencies": {
-    "front-matter": "^2.0.5",
-    "lodash": "^4.3.0"
+    "@types/lodash": "^4.14.37",
+    "@types/mkpath": "^0.1.29",
+    "chokidar": "^1.6.0",
+    "front-matter": "^2.1.0",
+    "js-csp": "^0.7.3",
+    "lodash": "^4.16.6",
+    "mkpath": "^1.0.0",
+    "ramda": "^0.22.1"
+  },
+  "devDependencies": {
+    "@types/chokidar": "^1.4.29",
+    "@types/node": "^6.0.40",
+    "ava": "^0.17.0",
+    "markdown-it": "^8.0.1",
+    "mock-fs": "^3.11.0",
+    "pug": "^2.0.0-beta6",
+    "typescript": "^2.1.4"
+  },
+  "ava": {
+    "files": [
+      "**/*.test.js"
+    ],
+    "require": [
+      "babel-register"
+    ]
   }
 }

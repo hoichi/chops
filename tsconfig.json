@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "outDir": "build",
+    "rootDir": "src",
+    "sourceMap": true,
+    "strictNullChecks": false,  /* should be true, when things like `string | undefined` work */
+    "target": "es2015"
+  },
+  "exclude": [
+    "node_modules",
+    "_tmp"
+  ]
+}

@@ -1,0 +1,33 @@
+doctype html
+html.no-js(lang='en')
+  head
+    meta(charset='utf-8')
+    meta(http-equiv='x-ua-compatible', content='ie=edge')
+    block h__title
+      title= 'i.i' /* +title */
+    meta(name='globalProperty', content=page.globalProperty)
+    meta(name='prev', content=page.prev && page.prev.title)
+    meta(name='next', content=page.next && page.next.title)
+    meta(name='description', content='I write as I learn as I go. A blog on web development, technologies involved and problems solved.')
+    meta(name='viewport', content='width=device-width, initial-scale=1')
+    //link(rel='apple-touch-icon', href='apple-touch-icon.png')
+    // Place favicon.ico in the root directory
+    link(rel='stylesheet' href='//cdn.muut.com/1/moot.css')
+    //- $FIXME: make a block and addSorted extra styles only where they're needed
+    link(rel='stylesheet', href='/css/style.css')
+    link(rel='alternate' type='application/rss+xml' href='/feed/')
+    script(src='/js/vendor/modernizr-2.8.3.min.js')
+    script(src='/js/prism.js')
+  body
+    // Add your site or application content here
+    script.
+      Prism.highlightAll(false, function () {console.log('#');});
+    header.b-Masthead.u-centered(role='banner')
+      block header
+
+    main#content.Content.u-centered(role='main')
+      block content
+
+    footer#colophon.b-Colophon.u-centered(role='contentinfo')
+      block footer
+        p.b-Colophon__contacts I’m <code>hoichi</code> on <a href='//github.com/hoichi'>GitHub</a> and <a href='//medium.com/@hoichi'>Medium</a>. I’m also <a href='mailto:hi@hoichi.io'>hi@hoichi.io</a>.
