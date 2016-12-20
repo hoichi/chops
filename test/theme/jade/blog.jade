@@ -1,0 +1,28 @@
+extends ./page/page.jade
+//-
+block h__title
+    title= 'i.i / '+category
+block header
+    .b-Masthead__breadcrumbs
+        a(href='/') hoichi.io
+        = ' / '
+block content
+    h1= category
+
+    if short_desc
+        p.b-desc!= short_desc
+
+    each post in page.posts
+        - console.log(post.title);
+        .b-post
+            header.b-post__header
+                span.b-post__date= cfg.date_short(post.date)
+                h2.b-post__title
+                    a.b-post__header-link(href=post.href)= post.title
+            .b-post-meta
+            .b-post__body
+                p
+                    a.b-post__more(href=post.href)
+                        | !{post.excerpt}
+                        br
+                        | ...
