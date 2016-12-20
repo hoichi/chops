@@ -32,5 +32,14 @@ node_modules
 # Optional REPL history
 .node_repl_history
 
-# No idea
+# Nevermind my tooling
 .idea/
+.imdone/
+.vscode/
+yarn.lock
+
+# Here today, gone tomorrow
+_tmp/
+build/
+
+test/build/
