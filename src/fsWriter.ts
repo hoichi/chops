@@ -46,8 +46,6 @@ export class FsWriter extends Transmitter {
 }
 
 function writeAPage(destPath: string, content: string): void {
-    console.warn(`destPath = ${destPath}`);
-
     try {
         tryWritingOnce();
     } catch (err) {
