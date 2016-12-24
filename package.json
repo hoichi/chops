@@ -1,10 +1,11 @@
 {
   "name": "chops",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "A lean mean static... build... thing",
-  "main": "src/index.js",
+  "main": "build/index.js",
   "scripts": {
     "dev-install": "node_modules/typings/dist/bin.js install",
+    "install": "npm install && node_modules/.bin/tsc",
     "test": "tsc & ava"
   },
   "repository": {

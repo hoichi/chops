@@ -36,8 +36,8 @@ export class ChoppingBoard<T extends ChopData> extends ChainMaker {
         return this;
     }
 
-    render(templates: ChoppingBoard<ChopPage>, tplName: string | TemplateNameCb) {
-        const renderer = new ChopRenderer(tplName, this.subChan);
+    render(templates: ChoppingBoard<ChopPage>, tplName: string | TemplateNameCb, data = {}) {
+        const renderer = new ChopRenderer(tplName, this.subChan, data);
         templates.addTransmitter(renderer); // listen for templates
         this.addTransmitter(renderer);      // and also for pages
         return this;

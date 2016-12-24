@@ -59,7 +59,10 @@ export class ChopRenderer extends Transmitter {
     private _tplNameExtractor: (page: ChopPage) => string | string;
     private _tplSubscribers = [];
 
-    constructor (tplNameOrExtractor: string | StringExtractor, private modelType = 'page') {
+    constructor ( tplNameOrExtractor: string | StringExtractor
+                , private modelType = 'page'
+                , private _commonData = {})
+    {
         super();
 
         this.declareChannels({ input: [modelType, 'template']
@@ -102,7 +105,7 @@ export class ChopRenderer extends Transmitter {
                 l(` >> >> ...yielding a template "${tplName}"...`);
                 template = tplSub.latest || (yield take(tplSub.chTpl));
                 l(` >>> >>> ...and getting a template "${template.id}"`);
-                let pageRendered = applySingleTemplate(template, {page});
+                let pageRendered = applySingleTemplate(template, {...this._commonData, page});
                 yield put(chOut, pageRendered);
             }
             l(`NOT LISTENING TO PAGES ANYMORE`);
@@ -148,7 +151,7 @@ export class ChopRenderer extends Transmitter {
             let chOut = this.chOut(this.modelType);
 
             for (let key in pages) {
-                let pageRendered = applySingleTemplate(template, {page: pages[key]}),
+                let pageRendered = applySingleTemplate(template, {...this._commonData, page: pages[key]}),
                     res = yield alts([
                         chRefresh,
                         [chOut, pageRendered]
@@ -184,7 +187,8 @@ export class ChopRenderer extends Transmitter {
 
 function applySingleTemplate(template: TemplateCompiled, data: PageRendererData): ChopEvent<ChopPage> {
     // todo: make it a pure function. and maybe separate rendering from data flow
-    let fullData = Object.assign({}, {cfg: rendererCfg}, data);
+    let fullData =  {cfg: rendererCfg, ...data};
+
     l(`RRRRRendering a page "${data.page.id}"`);
     return {
         action: 'add',    // fixme: event flow doesn’ belong here at all

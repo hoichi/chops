@@ -50,9 +50,9 @@ export class ChopsCollection extends ChainMaker {
         return this;
     }
 
-    render(templates: ChoppingBoard<ChopPage>, tplName: string | TemplateNameCb) {
+    render(templates: ChoppingBoard<ChopPage>, tplName: string | TemplateNameCb, data = {}) {
         // hack: I think that’s what inheriting directly from Transmitter is
-        const renderer = new ChopRenderer(tplName, 'collection');
+        const renderer = new ChopRenderer(tplName, 'collection', data);
         templates.addTransmitter(renderer); // direct templates to renderer
         this.addTransmitter(renderer);      // also send this collection its way
         return this;
