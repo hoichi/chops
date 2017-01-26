@@ -127,6 +127,8 @@ export class Collector extends Transmitter {
                 if (action === 'add') {
                     this._pagesArrived++;
                     this.flushIfAllPagesArrived();
+                    // hack: puts `flush` in an input channel, so it won’t flush right now
+                    //          which is not exactly obvious
                 }
 
                 if (~['add', 'change'].indexOf(action)) {

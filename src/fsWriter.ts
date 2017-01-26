@@ -35,7 +35,8 @@ export class FsWriter extends Transmitter {
                 }
 
                 let page = event.data;
-                writeAPage(path.resolve(dir, page.url), page.content);
+                page &&
+                    writeAPage(path.resolve(dir, page.url), page.content)
             }
         }.bind(this));
     }

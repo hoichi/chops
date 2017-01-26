@@ -7,9 +7,9 @@
 
 ## make it right
 ### refactorings
-- [ ] abstract putting so it’s more debuggable
 - [ ] refactor subscriptions (combine chOuts and subscribers)
     - [ ] and maybe create channels on subscribers actually
+- [ ] abstract putting so it’s more debuggable
 - [ ] abstract flushing
     - [ ] render pages on flushing a renderer
     - [ ] update 'prev/next' on flushing a collector

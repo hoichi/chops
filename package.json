@@ -35,13 +35,19 @@
     "ramda": "^0.22.1"
   },
   "devDependencies": {
+    "@types/chai": "^3.4.34",
     "@types/chokidar": "^1.4.29",
+    "@types/mocha": "^2.2.38",
     "@types/node": "^6.0.40",
     "ava": "^0.17.0",
+    "chai": "^3.5.0",
+    "karma": "^1.4.0",
     "markdown-it": "^8.0.1",
+    "mocha": "^3.2.0",
     "mock-fs": "^3.11.0",
     "pug": "^2.0.0-beta6",
-    "typescript": "^2.1.4"
+    "ts-node": "^2.0.0",
+    "typescript": "^2.1.5"
   },
   "ava": {
     "files": [

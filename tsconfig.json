@@ -1,10 +1,10 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "outDir": "build",
-    "rootDir": "src",
+    "outDir": "../test-js",
+    "rootDir": ".",
     "sourceMap": true,
-    "strictNullChecks": false,  /* should be true, when things like `string | undefined` work */
+    "strictNullChecks": true,
     "target": "es2015"
   },
   "exclude": [
