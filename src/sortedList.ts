@@ -12,18 +12,19 @@ export interface SortedList<T> {
 }
 
 interface SLPrivateFunctions<T> {
-    addSorted(T): T[],
-    checkLength(): T[],
-    meetTheNeighbors(number, T): T[],
+    addSorted(T): ReadonlyArray<T>,
+    checkLength(): ReadonlyArray<T>,
+    meetTheNeighbors(number, T): ReadonlyArray<T>,
     setPrevNext(a:T,b:T): [T,T]
 }
 
 interface SLOptions<T> {
-    unique?: boolean,
+    debug?: boolean,
     indexBy?: SortIteratee,
     sortBy?: SortIteratee,
     setPrev?: PrevNextSetter<T>,
     setNext?: (target: T, other: T) => T,
+    unique?: boolean,
 }
 
 type SortValue = string | number;
@@ -51,11 +52,12 @@ export function SortedList<T>(options: SLOptions<T> = {}): SortedList<T> {
 
     /* options defaults */
     let _options = {
-            unique: true,
-            sortBy: options.indexBy || (el => el.toString()),
+            debug: false,
             indexBy: options.sortBy || (el => el.toString()),
-            setPrev: PrevNextNoOp,
             setNext: PrevNextNoOp,
+            setPrev: PrevNextNoOp,
+            sortBy: options.indexBy || (el => el.toString()),
+            unique: true,
             ...options
         };
 
@@ -87,7 +89,9 @@ export function SortedList<T>(options: SLOptions<T> = {}): SortedList<T> {
      * @param item
      * @returns {Array}
      */
-    function addSorted(item: T): T[] {
+    function addSorted(item: T) {
+        if (!_isSorted) throw Error('Did someone just call `addSorted()` on an unsorted list?');
+
         // todo: FP-ize
         let by  = _options.sortBy,
             key = by(item),
@@ -104,7 +108,7 @@ export function SortedList<T>(options: SLOptions<T> = {}): SortedList<T> {
      * Sets prev/next on the item and its neighbors and returns an [] of everyone affected
      * @param idx
      * @param curr
-     * @returns {Array}
+     * @returns {ReadonlyArray<T>}
      */
     function meetTheNeighbors(idx: number, curr: T) {
         let idxPrev = idx - 1,
@@ -124,7 +128,7 @@ export function SortedList<T>(options: SLOptions<T> = {}): SortedList<T> {
         }
 
         result.push(curr);  // q: I wonder if the order matters
-        return result;
+        return Object.freeze(result);
     }
 
     /**
@@ -162,7 +166,7 @@ export function SortedList<T>(options: SLOptions<T> = {}): SortedList<T> {
     /**
      * Sets a finite expected list length and sorts the list if the list is already as long
      * @param len
-     * @returns {ReadonlyArray<T>|Array}
+     * @returns {ReadonlyArray<T>}
      */
     function setExpectedLength(len) {
         _expectedLength = len;
@@ -171,24 +175,28 @@ export function SortedList<T>(options: SLOptions<T> = {}): SortedList<T> {
 
     /**
      * Sorts and returns the list if it’s already as long as needed
-     * @returns {ReadonlyArray<T>|Array}
+     * @returns {ReadonlyArray<T>}
      */
-    function checkLength() {
+    function checkLength(): ReadonlyArray<T> {
         return _length >= _expectedLength
                 ? sort()
-                : [];
+                : Object.freeze([]);
     }
 
-    return Object.freeze({
+    let api: SortedList<T> = {
         get isSorted() {return _isSorted},
         add,
         sort,
-        setExpectedLength,
-        __4tests__: {
+        setExpectedLength
+    };
+
+    if (_options.debug) {
+        api.__4tests__ = {
             addSorted,
             checkLength,
             meetTheNeighbors,
             setPrevNext
         }
-    });
+    }
+    return Object.freeze(api);
 }
