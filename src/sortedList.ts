@@ -94,11 +94,13 @@ export function SortedList<T>(options: SLOptions<T> = {}): SortedList<T> {
 
         // todo: FP-ize
         let by  = _options.sortBy,
-            key = by(item),
-            idx = sortedLastIndexBy(_list, key, by);
+            idx = sortedLastIndexBy(_list, item, by);
 
         // insert in the sorted position
-        _list.splice(idx, 0, item);
+        _list = [ ..._list.slice(0, idx)
+                , item
+                , ..._list.slice(idx) ];
+        // _list.splice(idx, 0, item);
 
         // mutate and return the item and its neighbors
         return meetTheNeighbors(idx, item);
@@ -123,11 +125,12 @@ export function SortedList<T>(options: SLOptions<T> = {}): SortedList<T> {
 
         if (idxNext < _list.length) {
             let next = _list[idxNext];
-            [curr, next] = setPrevNext(curr, next);
-            result.push(next);
+            result = [ ...result
+                     , ...setPrevNext(curr, next)]; // adding `curr` and `next` at once
+        } else {
+            result.push(curr);
         }
 
-        result.push(curr);  // q: I wonder if the order matters
         return Object.freeze(result);
     }
 
@@ -149,15 +152,18 @@ export function SortedList<T>(options: SLOptions<T> = {}): SortedList<T> {
      * @returns {ReadonlyArray<T>}
      */
     function sort() {
+        if (_isSorted) return _list; // q: or should we return nada since there's nothing new?
+
         _list = sortBy(_dic, _options.sortBy);
+        _isSorted = true;
 
         // and now the fun part: setting prev/next on the whole list
         let len = _list.length;
 
         for (let i = 0; i < len-1; i++) {
             let [first, second] = setPrevNext(_list[i], _list[i+1]);
-            _list[i] = first;       // hack: we do these assignments twice
-            _list[i+1] = second;
+            _list[i] = first;       // hack: we do these assignments twice per item
+            _list[i+1] = second;    // hack: we do these assignments twice per item
         }
 
         return Object.freeze(_list);
