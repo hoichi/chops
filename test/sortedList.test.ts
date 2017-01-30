@@ -2,7 +2,7 @@
 import {SortedList} from '../src/sortedList';
 import {expect} from 'chai';
 
-describe('SortedList private methods', function sl_main() {
+describe('SortedList private methods', function sl_private() {
     let list: SortedList<any>,
         _4t_;
 
@@ -104,28 +104,96 @@ describe('SortedList private methods', function sl_main() {
             ]);
     });
 
-    // todo: addSorted into starting/ending position
+    it('addSorted should add to the beginning', () => {
+        let list = SortedList<string>({debug: true});
 
+        list.add('Benjamin');
+        list.add('Anthony');
+        list.sort();
+
+        expect( list.__4tests__ && list.__4tests__.addSorted('Christian'))
+            .to.deep.eq(['Benjamin', 'Christian']);
+    });
+
+    it('addSorted should add to the end', () => {
+        let list = SortedList<string>({debug: true});
+
+        list.add('Benjamin');
+        list.add('Christian');
+        list.sort();
+
+        expect( list.__4tests__ && list.__4tests__.addSorted('Anthony'))
+            .to.deep.eq(['Anthony', 'Benjamin']);
+    });
+
+    it('addSorted should insert after the equal value', () => {
+        let list = SortedList<string>({debug: true});
+
+        list.add('Anthony');
+        list.add('Benjamin');
+        list.add('Benjamin');
+        list.add('Christian');
+        list.sort();
+
+        expect( list.__4tests__ && list.__4tests__.addSorted('Benjamin'))
+            .to.deep.eq(['Benjamin', 'Benjamin', 'Christian']);
+    });
 
     it('checkLength for non-full lists should return nothing', () => {
         expect(_4t_.checkLength())
             .to.deep.eq([]);
     });
 
-    it('meetTheNeighbors should meet the expectations', () => {
-        let list = SortedList<string>();
-    });
-
-``    /*
-     TODO:
-     * meetTheNeighbors(idx, T): []
-     */
+    /* No test for meetTheNeighbors so far. They’re so deep that maybe it’s to much manual labor. */
 });
 
-/*
- TODO:
- * isSorted,
- * add,
- * sort,
- * setExpectedLength
- */
+describe('SortedList public api', function sl_public() {
+    let list: SortedList<any>,
+        _4t_;
+
+    beforeEach('Initializing with defaults', function sl_initWithDefaults() {
+        list = SortedList<any>();
+    });
+
+    it('Should sort manually', () => {
+        list.add(3);
+        list.add(3.14);
+        list.add(2);
+        expect(list.isSorted, 'Should be unsorted until we sort it')
+            .to.eq(false);
+
+        expect(list.sort(), 'First sort should return the whole list')
+            .to.deep.eq([2, 3, 3.14]);
+
+        expect(list.isSorted, 'Should be sorted after we sort it')
+            .to.eq(true);
+
+        expect(list.sort(), 'Consecutive calls to .sort() should back up empty')
+            .to.deep.eq([]);
+
+        expect(list.sort(), 'One more empty .sort() to be sure')
+            .to.deep.eq([]);
+    });
+
+
+    it('Should sort an empty list', () => {
+        expect(list.sort())
+            .to.deep.eq([]);
+
+        expect(list.isSorted)
+            .to.eq(true);
+
+        expect(list.add('newVal'))
+            .to.deep.eq(['newVal']);
+    });
+
+    /*
+     TODO:
+     * isSorted,
+     * add,
+     * sort,
+     * setExpectedLength
+     * prev/next
+     * sortBy/indexBy
+     */
+});

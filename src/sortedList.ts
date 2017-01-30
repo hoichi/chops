@@ -152,7 +152,7 @@ export function SortedList<T>(options: SLOptions<T> = {}): SortedList<T> {
      * @returns {ReadonlyArray<T>}
      */
     function sort() {
-        if (_isSorted) return _list; // q: or should we return nada since there's nothing new?
+        if (_isSorted) return Object.freeze([]); // no changes to return
 
         _list = sortBy(_dic, _options.sortBy);
         _isSorted = true;
