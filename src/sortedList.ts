@@ -6,6 +6,7 @@ import {sortedLastIndexBy, sortBy} from 'lodash';
 export interface SortedList<T> {
     isSorted: boolean;
     add(T): ReadonlyArray<T>;
+    all: ReadonlyArray<T>;
     sort(): ReadonlyArray<T>;
     setExpectedLength(number): ReadonlyArray<T>;
     __4tests__?: SLPrivateFunctions<T>;
@@ -28,7 +29,7 @@ interface SLOptions<T> {
 }
 
 type SortValue = string | number;
-type SortIteratee = (el: any) => SortValue;
+export type SortIteratee = (el: any) => SortValue;
 type PrevNextSetter<T> = (target: T, other: T) => T;
 
 /*
@@ -36,7 +37,7 @@ type PrevNextSetter<T> = (target: T, other: T) => T;
 * - adds value
 * - sorts values on demand
 * - reports length
-* - returns list
+* - returns all
 * */
 
 export function SortedList<T>(options: SLOptions<T> = {}): SortedList<T> {
@@ -90,7 +91,7 @@ export function SortedList<T>(options: SLOptions<T> = {}): SortedList<T> {
      * @returns {Array}
      */
     function addSorted(item: T) {
-        if (!_isSorted) throw Error('Did someone just call `addSorted()` on an unsorted list?');
+        if (!_isSorted) throw Error('Did someone just call `addSorted()` on an unsorted all?');
 
         // todo: FP-ize
         let by  = _options.sortBy,
@@ -148,7 +149,7 @@ export function SortedList<T>(options: SLOptions<T> = {}): SortedList<T> {
     }
 
     /**
-     * Sorts and returns the whole list.
+     * Sorts and returns the whole all.
      * @returns {ReadonlyArray<T>}
      */
     function sort() {
@@ -157,7 +158,7 @@ export function SortedList<T>(options: SLOptions<T> = {}): SortedList<T> {
         _list = sortBy(_dic, _options.sortBy);
         _isSorted = true;
 
-        // and now the fun part: setting prev/next on the whole list
+        // and now the fun part: setting prev/next on the whole all
         let len = _list.length;
 
         for (let i = 0; i < len-1; i++) {
@@ -170,7 +171,7 @@ export function SortedList<T>(options: SLOptions<T> = {}): SortedList<T> {
     }
 
     /**
-     * Sets a finite expected list length and sorts the list if the list is already as long
+     * Sets a finite expected all length and sorts the all if the all is already as long
      * @param len
      * @returns {ReadonlyArray<T>}
      */
@@ -180,7 +181,7 @@ export function SortedList<T>(options: SLOptions<T> = {}): SortedList<T> {
     }
 
     /**
-     * Sorts and returns the list if it’s already as long as needed
+     * Sorts and returns the all if it’s already as long as needed
      * @returns {ReadonlyArray<T>}
      */
     function checkLength(): ReadonlyArray<T> {
@@ -191,6 +192,7 @@ export function SortedList<T>(options: SLOptions<T> = {}): SortedList<T> {
 
     let api: SortedList<T> = {
         get isSorted() {return _isSorted},
+        get all() {return _list},
         add,
         sort,
         setExpectedLength

@@ -22,7 +22,7 @@ describe('SortedList private methods', function sl_private() {
         expect(setPrevNext(null, null),'Shouldn’t break on nulls')
             .to.deep.equal([null, null]);
 
-        expect(setPrevNext({a: 2, b: 5}, ['x', 18]),'Shouldn’t mutate values by default')
+        expect(setPrevNext({a: 2, b: 5}, ['x', 18]),'Shouldn’t mutate values sortBy default')
             .to.deep.equal([{a: 2, b: 5}, ['x', 18]]);
     });
 
@@ -280,7 +280,7 @@ describe('SortedList public api', function sl_public() {
             ]);
     });
 
-    it('Sorting by names, indexing by dates', () => {
+    it('Sorting sortBy names, indexing sortBy dates', () => {
         list = SortedList<any>({
             indexBy: el => el.name,
             sortBy: el => el.date,
@@ -302,5 +302,21 @@ describe('SortedList public api', function sl_public() {
             {name: 'Alister',   date: new Date(2017, 0, 22, 13, 30)},
             {name: 'Dorchester', date: new Date(2017, 0, 22, 13, 40)}
         ]);
+    });
+
+    it('.all is only filled after sorting', () => {
+        expect(list.all)
+            .to.deep.eq([]);
+
+        list.add('Aldo');
+        list.add('Bingo');
+
+        expect(list.all)
+            .to.deep.eq([]);
+
+        list.sort();
+
+        expect(list.all)
+            .to.deep.eq(['Aldo', 'Bingo']);
     });
 });

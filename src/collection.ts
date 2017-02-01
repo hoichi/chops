@@ -5,28 +5,29 @@ import {go, put, putAsync, take} from 'js-csp';
 import * as csp from 'js-csp';
 import {sortedLastIndexBy} from 'lodash';
 
-import {ChopPage, ChopEvent, ChopData} from "./chops";
+import {ChopPage, ChopEvent, ChopData, Dictionary} from "./chops";
 import l from './log';
 
 import {ChainMaker} from "./chainmaker";
 import {ChoppingBoard} from "./choppingBoard";
 import {FsWriter} from "./fsWriter";
 import {ChopRenderer, TemplateNameCb} from "./renderer";
+import {SortedList, SortIteratee} from "./sortedList";
 import {Transmitter} from "./transmitter";
 
-type SortValue = string | number;
 
-type SortIteratee = (el: any) => SortValue; // todo: property shortcut
-
-export interface SortOptions {
-    by: SortIteratee;
+export interface CollectionOptions {
+    sortBy?: SortIteratee;
+    indexBy?: SortIteratee;
     // descending?: boolean;
 }
+
+type PatchCallback = (data: Dictionary<any>) => Dictionary<any>;
 
 export class ChopsCollection extends ChainMaker {
     private _collector;
 
-    constructor(options: SortOptions) {
+    constructor(options: CollectionOptions) {
         super('collection');
         this._collector = new Collector(options);
         this.addEmitter(this._collector);
@@ -66,10 +67,12 @@ export class ChopsCollection extends ChainMaker {
 }
 
 export class Collector extends Transmitter {
-    private _data = {};
+    private _list: SortedList<ChopPage>;
+
+    private _data: Dictionary<any> = {};
     private _isFlushed = false;
 
-    private _sortOptions: SortOptions;
+    private _sortOptions: CollectionOptions;
     private _sortedList:  ChopPage[];
 
     private _pagesExpected = Infinity;
@@ -82,7 +85,7 @@ export class Collector extends Transmitter {
         this._filter = fltrFn;
     }
 
-    constructor(options: SortOptions) {
+    constructor(options: CollectionOptions) {
         super();
 
         this.declareChannels({
@@ -90,11 +93,10 @@ export class Collector extends Transmitter {
             output: ['page', 'collection']
         });
 
-        this._sortOptions = {
-            by: options.by
-        };
-
-        this._sortedList = [];
+        this._list = SortedList<ChopPage>({
+            indexBy: options.indexBy,
+            sortBy: options.sortBy,
+        });
     }
 
     protected startTransmitting() {
@@ -107,76 +109,37 @@ export class Collector extends Transmitter {
                 chOutPg = this.chOut('page');
 
             while ((event = yield take(chIn)) !== csp.CLOSED) {
-                let {action} = event;
-
-                if (action === 'flush') {
-                    l('About to flush ’em pages');
-                    // emit the pages. and don’t stop till we’ve sent ’em all
-                    yield* this.flushAllPages();
-                    yield* this.sendCollection();
-                    this._isFlushed = true;
-                    continue;
-                }
+                let {action, data: page} = event,
+                    pages = [];
 
                 if (action === 'ready') {
-                    this._pagesExpected = event.count;
-                    this.flushIfAllPagesArrived();
-                    continue;
-                }
-
-                if (action === 'add') {
-                    this._pagesArrived++;
-                    this.flushIfAllPagesArrived();
-                    // hack: puts `flush` in an input channel, so it won’t flush right now
-                    //          which is not exactly obvious
-                }
-
-                if (~['add', 'change'].indexOf(action)) {
-                    l(`Collecting the page "${event.data && event.data.id}"`);
-                    page = event.data;
+                    pages = this._list.setExpectedLength(event.count);
+                } else if (~['add', 'change'].indexOf(action)) {
+                    l(`Collecting the page "${page && page.id}"`);
                     if (!this._filter(page)) {
                         yield put(chOutPg, event);  // let it go, it’s not yours
                         continue;
                     }
 
-                    page = this.addSorted(page);
-                    this.flushIfAllPagesArrived();
+                    pages = page = this._list.add(page);
+                }
 
-                    if (this._isFlushed) { // green light, we can send it downstream
-                        // emit the current page
-                        yield put(chOutPg, {
-                            action: action,
-                            type: 'PAGE',
-                            data: page
-                        });
-                        yield* this.sendCollection();
-                    }
+                yield* this.sendPages(pages);
+
+                if (pages.length) {
+                    yield* this.sendCollection(this._list.all);
                 }
             }
         }.bind(this));
     }
 
-    protected addSorted(page: ChopPage) {
-        // todo: check for dupes
-        //       or just implement .replace() for the 'change' event
-
-        return insertSorted(this._sortedList, page, this._sortOptions.by);
-    }
-
-    patchData(cb) {
+    patchData(cb: PatchCallback) {
         this._data = Object.assign({}, this._data, cb(this._data));
         return this;
     }
 
-    protected flushIfAllPagesArrived() {
-        if (this._pagesArrived >= this._pagesExpected) {
-            putAsync(this.chIn('page'), {action: 'flush'});
-        }
-    }
-
-    private *flushAllPages() {
-        let pages = this._sortedList,
-            len = pages.length,
+    private *sendPages(pages: ChopPage[]) {
+        let len = pages.length,
             chOut = this.chOut('page');
         l(`Sending all the ${len} sorted pages downstream`);
 
@@ -197,10 +160,10 @@ export class Collector extends Transmitter {
         return;
     }
 
-    private *sendCollection() {
+    private *sendCollection(posts: ChopPage[]) {
         // let’s keep the _sortedList private so it doesn’t get overridden
-        // by ‘user space’ calls like `update` or `patchData`
-        this.patchData(() => ({posts: this._sortedList}));
+        // sortBy ‘user space’ calls like `update` or `patchData`
+        this.patchData(() => ({posts}));
 
         yield put(this.chOut('collection'), {
             type: 'collection',
