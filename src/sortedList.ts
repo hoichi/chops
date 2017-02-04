@@ -8,13 +8,11 @@ export interface SortedList<T> {
     add(T): ReadonlyArray<T>;
     all: ReadonlyArray<T>;
     sort(): ReadonlyArray<T>;
-    setExpectedLength(number): ReadonlyArray<T>;
     __4tests__?: SLPrivateFunctions<T>;
 }
 
 interface SLPrivateFunctions<T> {
     addSorted(T): ReadonlyArray<T>,
-    checkLength(): ReadonlyArray<T>,
     meetTheNeighbors(number, T): ReadonlyArray<T>,
     setPrevNext(a:T,b:T): [T,T]
 }
@@ -42,10 +40,8 @@ type PrevNextSetter<T> = (target: T, other: T) => T;
 
 export function SortedList<T>(options: SLOptions<T> = {}): SortedList<T> {
     let _isSorted = false,
-        _expectedLength = Infinity,
         _dic = Object.create(null),
-        _list: T[] = [],
-        _length = 0;
+        _list: T[] = [];
 
     function PrevNextNoOp(target: T, other: T) {
         return target;
@@ -70,10 +66,6 @@ export function SortedList<T>(options: SLOptions<T> = {}): SortedList<T> {
     function add(item: T) {
         let id = _options.indexBy(item);
 
-        if (!_dic[id]) {
-            // adding, not replacing
-            _length++;
-        }
         _dic[id] = item;
 
         if (_isSorted) {
@@ -82,7 +74,7 @@ export function SortedList<T>(options: SLOptions<T> = {}): SortedList<T> {
             return addSorted(item);
         }
 
-        return checkLength();
+        return [];
     }
 
     /**
@@ -170,38 +162,16 @@ export function SortedList<T>(options: SLOptions<T> = {}): SortedList<T> {
         return Object.freeze(_list);
     }
 
-    /**
-     * Sets a finite expected all length and sorts the all if the all is already as long
-     * @param len
-     * @returns {ReadonlyArray<T>}
-     */
-    function setExpectedLength(len) {
-        _expectedLength = len;
-        return checkLength();
-    }
-
-    /**
-     * Sorts and returns the all if it’s already as long as needed
-     * @returns {ReadonlyArray<T>}
-     */
-    function checkLength(): ReadonlyArray<T> {
-        return _length >= _expectedLength
-                ? sort()
-                : Object.freeze([]);
-    }
-
     let api: SortedList<T> = {
         get isSorted() {return _isSorted},
         get all() {return _list},
         add,
-        sort,
-        setExpectedLength
+        sort
     };
 
     if (_options.debug) {
         api.__4tests__ = {
             addSorted,
-            checkLength,
             meetTheNeighbors,
             setPrevNext
         }

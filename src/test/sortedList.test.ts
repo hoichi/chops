@@ -1,5 +1,5 @@
-///<reference path="../node_modules/@types/mocha/index.d.ts"/>
-import {SortedList} from '../src/sortedList';
+///<reference path="../../node_modules/@types/mocha/index.d.ts"/>
+import {SortedList} from '../sortedList';
 import {expect} from 'chai';
 
 describe('SortedList private methods', function sl_private() {
@@ -138,13 +138,6 @@ describe('SortedList private methods', function sl_private() {
         expect( list.__4tests__ && list.__4tests__.addSorted('Benjamin'))
             .to.deep.eq(['Benjamin', 'Benjamin', 'Christian']);
     });
-
-    it('checkLength for non-full lists should return nothing', () => {
-        expect(_4t_.checkLength())
-            .to.deep.eq([]);
-    });
-
-    /* No test for meetTheNeighbors so far. They’re so deep that maybe it’s to much manual labor. */
 });
 
 describe('SortedList public api', function sl_public() {
@@ -187,38 +180,7 @@ describe('SortedList public api', function sl_public() {
             .to.deep.eq(['newVal']);
     });
 
-    it('should be sorted when setting the expected length equal to the current one', () => {
-        list.add('Alister');
-        list.add('Barrister');
-        list.add('Canister');
-
-        expect(list.setExpectedLength(3))
-            .to.deep.eq(['Alister', 'Barrister', 'Canister']);
-    });
-
-    it('should be sorted when setting the expected length shorter than the current one', () => {
-        list.add('Alister');
-        list.add('Barrister');
-        list.add('Canister');
-
-        expect(list.setExpectedLength(2))
-            .to.deep.eq(['Alister', 'Barrister', 'Canister']);
-    });
-
-    it('should be sorted when reaching the expected length', () => {
-        list.add('Alister');
-        list.add('Barrister');
-        list.add('Canister');
-        list.setExpectedLength(4);
-
-        expect(list.add('Dorchester'))
-            .to.deep.eq(['Alister', 'Barrister', 'Canister', 'Dorchester']);
-
-        expect(list.isSorted)
-            .to.be.true;
-    });
-
-    it('Manual sort() should set prev/next correctly', () => {
+    it('.sort() should set prev/next correctly', () => {
         list = SortedList<any>({
             indexBy: el => el.name,
             setPrev: (cur, prev) => ({...cur, prev: prev.name}),
@@ -237,27 +199,6 @@ describe('SortedList public api', function sl_public() {
             ]);
     });
 
-    it('Add resulting in sort should set prev/next correctly too', () => {
-        list = SortedList<any>({
-            indexBy: el => el.name,
-            setPrev: (cur, prev) => ({...cur, prev: prev.name}),
-            setNext: (cur, next) => ({...cur, next: next.name}),
-        });
-
-        list.setExpectedLength(4);
-        list.add({name: 'Dorchester'});
-        list.add({name: 'Canister'});
-        list.add({name: 'Barrister'});
-
-        expect(list.add({name: 'Alister'}))
-            .to.deep.eq([
-                {name: 'Alister', next: 'Barrister'},
-                {name: 'Barrister', prev: 'Alister', next: 'Canister'},
-                {name: 'Canister', prev: 'Barrister', next: 'Dorchester'},
-                {name: 'Dorchester', prev: 'Canister'}
-            ]);
-    });
-
     it('Adding to a sorted list should return neighbors', () => {
         list = SortedList<any>({
             indexBy: el => el.name,
@@ -265,13 +206,10 @@ describe('SortedList public api', function sl_public() {
             setNext: (cur, next) => ({...cur, next: next.name}),
         });
 
-        list.setExpectedLength(3);
         list.add({name: 'Dorchester'});
         list.add({name: 'Canister'});
         list.add({name: 'Barrister'});
-
-        expect(list.isSorted)
-            .to.be.true;
+        list.sort();
 
         expect(list.add({name: 'Alister'}))
             .to.deep.eq([
@@ -286,11 +224,11 @@ describe('SortedList public api', function sl_public() {
             sortBy: el => el.date,
         });
 
-        list.setExpectedLength(3);
         list.add({name: 'Alister', date: new Date(2017, 0, 22, 13, 30)});
-        list.add({name: 'Barrister', date: new Date(2017, 0, 21, 13, 30)});
+        list.add({name: 'Canister', date: new Date(2017, 0, 21, 13, 20)});
+        list.sort();
 
-        expect( list.add({name: 'Canister', date: new Date(2017, 0, 21, 13, 20)}) )
+        expect( list.add({name: 'Barrister', date: new Date(2017, 0, 21, 13, 30)}) )
         .to.deep.eq([
             {name: 'Canister',  date: new Date(2017, 0, 21, 13, 20)},
             {name: 'Barrister', date: new Date(2017, 0, 21, 13, 30)},

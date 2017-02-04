@@ -47,6 +47,10 @@ export class FsWriter extends Transmitter {
 }
 
 function writeAPage(destPath: string, content: string): void {
+    if (!/.+\.\w+$/i.test(destPath)) {
+        destPath = path.resolve(destPath, 'index.html');
+    }
+ 
     try {
         tryWritingOnce();
     } catch (err) {

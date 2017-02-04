@@ -5,8 +5,7 @@
   "main": "build/index.js",
   "scripts": {
     "dev-install": "node_modules/typings/dist/bin.js install",
-    "install": "npm install",
-    "test": "tsc & ava"
+    "test": "node_packages/.bin/tsc & node_packages/.bin/mocha"
   },
   "repository": {
     "type": "git",
