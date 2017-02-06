@@ -4,10 +4,10 @@
  */
 
 import {FsWatcher}     from    './fsWatcher';
-import {ChopsCollection, SortOptions} from './collection';
+import {ChopsCollection, CollectionOptions} from './collection';
 import {ChoppingBoard} from "./choppingBoard";
 
-export function collection(options: SortOptions) {
+export function collection(options: CollectionOptions) {
     return new ChopsCollection(options);
 }
 

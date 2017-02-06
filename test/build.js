@@ -18,30 +18,43 @@ let templates = chops
 ;
 
 let testColl = chops.collection({
-            by: p => (p.date || new Date())
+            sortBy: p => (p.date || new Date())
         })
         .filter(page => page.category && (page.category === 'blog'))
         .patchCollection(() => ({
-            url: 'blog/index.html'
+            url: 'blog/index.html',
+            name: 'testColl'
         }))
         .render(templates, 'blog')
         .write('build')
     , allColl = chops.collection({
-            by: p => (p.date || new Date())
+            sortBy: p => (p.date || new Date())
         })
         .filter(page => true)
+        .patchCollection(() => ({
+            name: 'allColl'
+        }))
     , allColl2 = chops.collection({
-            by: p => (p.date || new Date())
+            sortBy: p => (p.date || new Date())
         })
         .filter(page => true)
+        .patchCollection(() => ({
+            name: 'allColl2'
+        }))
     , noneColl = chops.collection({
-            by: p => (p.date || new Date())
+            sortBy: p => (p.date || new Date())
         })
         .filter(page => false)
+        .patchCollection(() => ({
+            name: 'noneColl'
+        }))
     , noneColl2 = chops.collection({
-            by: p => (p.date || new Date())
+            sortBy: p => (p.date || new Date())
         })
         .filter(page => false)
+        .patchCollection(() => ({
+            name: 'noneColl2'
+        }))
     ;
 
 // pages

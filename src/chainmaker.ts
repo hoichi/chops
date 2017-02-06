@@ -1,6 +1,6 @@
 ///<reference path="chops.d.ts"/>
 /**
- * Created by hoichi on 15.10.2016.
+ * Created sortBy hoichi on 15.10.2016.
  */
 
 import {isFunction} from 'lodash';
@@ -66,7 +66,7 @@ export class ChainMaker {
     patch(newC: ChopConversion): ChainMaker {
         // todo:    addSorted a converter that uses something like Object.assign({}, d, newC(d))
         //          bonus points for patching with several objects
-        //          (i.e. by returning an array of them)
+        //          (i.e. sortBy returning an array of them)
         return this;
     }
 

@@ -1,6 +1,6 @@
 ///<reference path="chops.d.ts"/>
 /**
- * Created by hoichi on 15.10.2016.
+ * Created sortBy hoichi on 15.10.2016.
  */
 
 import {ChopPage, ChopData} from "./chops";
