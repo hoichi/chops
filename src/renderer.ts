@@ -6,10 +6,10 @@ import {Channel, alts, chan, go, put, take} from 'js-csp';
 import * as csp                             from 'js-csp';
 import {isString}                           from 'lodash';
 
-import {ChopData, ChopPage, Dictionary, ChopEvent}  from "./chops";
-import l                                            from './log';
-import {FsWriter}                                  from "./fsWriter";
-import * as u                                       from "./utils";
+import {ChopData, ChopPage, Dictionary, ChopEvent} from "./chops";
+import {FollowingList} from "./following";
+import l from './log';
+import * as u from "./utils";
 import {Transmitter} from "./transmitter";
 
 /*
@@ -44,20 +44,13 @@ export interface StringExtractor {
     (page: ChopPage): string;
 }
 
-interface TemplateSubscription {
-    chTpl: Channel;
-    chRefresh: Channel;
-    pages: Dictionary<ChopPage>;    // todo: the keys should be of action `ChopId`
-    latest: TemplateCompiled;
-}
-
 const rendererCfg = { date_short: u.dateFormatter( // fixme: so hardcode
     'en-US', {year: 'numeric', month: 'short', day: 'numeric'}
 )};
 
 export class ChopRenderer extends Transmitter {
     private _tplNameExtractor: (page: ChopPage) => string | string;
-    private _tplSubscribers = [];
+    private _tplSubs = FollowingList<TemplateCompiled,ChopPage>();
 
     constructor ( tplNameOrExtractor: string | StringExtractor
                 , private modelType = 'page'
@@ -83,8 +76,6 @@ export class ChopRenderer extends Transmitter {
             let pageEvent: ChopEvent<ChopPage>,
                 page,
                 tplName: string,
-                tplSub: TemplateSubscription,
-                template: TemplateCompiled,
                 chIn = this.chIn(this.modelType),
                 chOut = this.chOut(this.modelType);
 
@@ -98,20 +89,17 @@ export class ChopRenderer extends Transmitter {
                 // get a tpl channel (or create a new one)
                 page = pageEvent.data;
                 tplName = this._tplNameExtractor(page);
-                tplSub = this.getOrCreateTplSubscription(tplName, page);
+
+                let tplSub = this._tplSubs.byName(tplName),
+                    updates = tplSub.setFollower(page.id, page);
                 // todo: error by timeout if template never comes`
 
-                // take a template itself (or wait for it) and render the page
-                l(` >> >> ...yielding a template "${tplName}"...`);
-                template = tplSub.latest || (yield take(tplSub.chTpl));
-                l(` >>> >>> ...and getting a template "${template.id}"`);
-                let pageRendered = applySingleTemplate(template, {...this._commonData, page});
-                yield put(chOut, pageRendered);
+                yield* this.sendPages(updates.map(page =>
+                    applySingleTemplate(tplSub.leader, {...this._commonData, page})
+                ));
             }
-            l(`NOT LISTENING TO PAGES ANYMORE`);
         }.bind(this));
     }
-
 
     private listenForTemplates() {
         go(function *() {
@@ -124,73 +112,43 @@ export class ChopRenderer extends Transmitter {
                     template = tplEvent.data as TemplateCompiled;
                     l(`  I hear a template "${template.id}"`);
 
-                    let subscription = this.getOrCreateTplSubscription(template.id);
-                    subscription.latest = template; // todo:
-                                                    // - put it on a [generic] Subscription class?
-                                                    // - or create an fp-style latest(chan): Channel?
+                    let tplSub = this._tplSubs.byName(template.id),
+                        updates = tplSub.setLeader(template);
 
-                    yield put(subscription.chTpl, template);
-                    this.reApplyTemplate(template, subscription);   // fixme: race conditions
-                                                                    // maybe just delegate to a generator, like in Collection
+                    yield* this.sendPages(updates.map(page =>
+                        applySingleTemplate(tplSub.leader, {...this._commonData, page})
+                    ));
                 }
 
                 // pass the event along
                 if (this.subscriber('template')) {
                     yield put(this.chOut('template'), tplEvent);
                 }
-
             }
         }.bind(this));
     }
 
-    private reApplyTemplate(template: TemplateCompiled,
-                            {pages, chRefresh}: TemplateSubscription ) {
-        l(`--- reapplying template ${template.id}`);
-        go(function *() {
-            let chOut = this.chOut(this.modelType);
+    private *sendPages(pages: ChopPage[]) {
+        let len = pages.length,
+            chOut = this.chOut(this.modelType);
 
-            for (let key in pages) {
-                let pageRendered = applySingleTemplate(template, {...this._commonData, page: pages[key]}),
-                    res = yield alts([
-                        chRefresh,
-                        [chOut, pageRendered]
-                    ], {priority: true});
-
-                if (res.channel === chRefresh) break;   /*  or should we check for a value?
-                                                            right now we just put `true` there */
-            }
-
-            return;
-        }.bind(this));
-    }
-
-    private getOrCreateTplSubscription(tpl: string, page?: ChopPage): TemplateSubscription {
-        let subscription = this._tplSubscribers[tpl];
-
-        if (!subscription) {
-            // addSorted a new template subscription
-            this._tplSubscribers[tpl] = subscription = {
-                chTpl: chan(csp.buffers.sliding(1)),
-                pages: Object.create(null),
-                chRefresh: chan(1),
-                latest: undefined
-            };
+        for (let i = 0; i < len; i++) {
+            yield put(chOut, {
+                action: 'change',
+                data: pages[i]
+            });
         }
 
-        page &&
-            (subscription.pages[page.id] = page);   // fixme: move it elswhere
-
-        return subscription;
+        return;
     }
 }
 
-function applySingleTemplate(template: TemplateCompiled, data: PageRendererData): ChopEvent<ChopPage> {
-    // todo: make it a pure function. and maybe separate rendering from data flow
+function applySingleTemplate(template: TemplateCompiled, data: PageRendererData): ChopPage {
+    if (!template.render) throw Error('Rendering pages without a template is way beyond my skills.');
+
+    // todo: think through what should overwrite what
     let fullData =  {cfg: rendererCfg, ...data};
 
     l(`RRRRRendering a page "${data.page.id}"`);
-    return {
-        action: 'add',    // fixme: event flow doesn’ belong here at all
-        data: Object.assign({}, data.page, {content: template.render(fullData)})
-    };
+    return {...data.page, content: template.render(fullData)};
 }
