@@ -6,10 +6,10 @@ import {Channel, alts, chan, go, put, take} from 'js-csp';
 import * as csp                             from 'js-csp';
 import {isString}                           from 'lodash';
 
-import {ChopData, ChopPage, Dictionary, ChopEvent}  from "./chops";
-import l                                            from './log';
-import {FsWriter}                                  from "./fsWriter";
-import * as u                                       from "./utils";
+import {ChopData, ChopPage, Dictionary, ChopEvent} from "./chops";
+import {FollowingList} from "./following";
+import l from './log';
+import * as u from "./utils";
 import {Transmitter} from "./transmitter";
 
 /*
@@ -44,20 +44,13 @@ export interface StringExtractor {
     (page: ChopPage): string;
 }
 
-interface TemplateSubscription {
-    chTpl: Channel;
-    chRefresh: Channel;
-    pages: Dictionary<ChopPage>;    // todo: the keys should be of action `ChopId`
-    latest: TemplateCompiled;
-}
-
 const rendererCfg = { date_short: u.dateFormatter( // fixme: so hardcode
     'en-US', {year: 'numeric', month: 'short', day: 'numeric'}
 )};
 
 export class ChopRenderer extends Transmitter {
     private _tplNameExtractor: (page: ChopPage) => string | string;
-    private _tplSubscribers = [];
+    private _tplSubs = FollowingList<TemplateCompiled,ChopPage>();
 
     constructor ( tplNameOrExtractor: string | StringExtractor
                 , private modelType = 'page'
@@ -83,8 +76,6 @@ export class ChopRenderer extends Transmitter {
             let pageEvent: ChopEvent<ChopPage>,
                 page,
                 tplName: string,
-                tplSub: TemplateSubscription,
-                template: TemplateCompiled,
                 chIn = this.chIn(this.modelType),
                 chOut = this.chOut(this.modelType);
 
@@ -104,7 +95,7 @@ export class ChopRenderer extends Transmitter {
                 // todo: error by timeout if template never comes`
 
                 yield* this.sendPages(updates.map(page =>
-                    applySingleTemplate(tplSub.latest, {page})
+                    applySingleTemplate(tplSub.leader, {...this._commonData, page})
                 ));
             }
         }.bind(this));
@@ -125,7 +116,7 @@ export class ChopRenderer extends Transmitter {
                         updates = tplSub.setLeader(template);
 
                     yield* this.sendPages(updates.map(page =>
-                        applySingleTemplate(tplSub.latest, {page})
+                        applySingleTemplate(tplSub.leader, {...this._commonData, page})
                     ));
                 }
 
@@ -139,10 +130,13 @@ export class ChopRenderer extends Transmitter {
 
     private *sendPages(pages: ChopPage[]) {
         let len = pages.length,
-            chOut = this.chOut('page');
+            chOut = this.chOut(this.modelType);
 
         for (let i = 0; i < len; i++) {
-            yield put( chOut, pages[i]);
+            yield put(chOut, {
+                action: 'change',
+                data: pages[i]
+            });
         }
 
         return;
@@ -152,7 +146,7 @@ export class ChopRenderer extends Transmitter {
 function applySingleTemplate(template: TemplateCompiled, data: PageRendererData): ChopPage {
     if (!template.render) throw Error('Rendering pages without a template is way beyond my skills.');
 
-    // todo: make it a pure function. and maybe separate rendering from data flow
+    // todo: think through what should overwrite what
     let fullData =  {cfg: rendererCfg, ...data};
 
     l(`RRRRRendering a page "${data.page.id}"`);
