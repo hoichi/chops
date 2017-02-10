@@ -2,13 +2,23 @@
  * Created by hoichi on 22.11.2016.
  */
 
-import {Channel, chan} from "js-csp";
-import {Dictionary} from "./chops";
+import {Channel, chan, put} from "js-csp";
+import {ChopData, ChopEvent, Dictionary} from "./chops";
 
 interface ChannelDeclaration {
     input?: string[];
     output?: string[];
 }
+
+interface TransformationData {
+    [channelName: string]: EventData<any>;
+}
+
+interface EventData<T> {
+    [action: string]: T[];
+}
+
+type ChannelListener<T extends ChopData> = (event: ChopEvent<T>) => TransformationData;
 
 export abstract class Transmitter {
     private _chIn: Dictionary<Channel> = {};
@@ -92,6 +102,51 @@ export abstract class Transmitter {
 }
 
 
-class Subscription {
-    private _chOut: Channel;
+interface ChannelSubscribers {
+    getChannel(name: string): Channel;
+    /*
+    * TODO: add shit later. For now let's
+    *   a) test the pure *sendTransformationData()
+    *   b) wrap the built-in `this._subscriber[]` and `this.chOut()`
+    * */
+}
+
+function ChannelSubscribers(): ChannelSubscribers {
+    let channels: Dictionary<Channel> = Object.create(null),
+        subscribers: Dictionary<Transmitter> = Object.create(null);
+
+    function getChannel(name: string) {
+        let ch = channels[name];
+        if (!ch) throw Error(`Observer for the "${name}" channel doesn’t exist`);
+        return ch;
+    }
+
+/*
+    function setSubscriber(subscriber: Transmitter) {
+
+    }
+*/
+
+    return Object.freeze({
+        getChannel
+    });
+}
+
+export function *sendTransformationData(subs: ChannelSubscribers, data: TransformationData) {
+    for (let chName of Object.keys(data)) {
+        let chOut = subs.getChannel(chName);
+        if (!chOut) continue;
+        let chData = data[chName];
+
+        for (let action of Object.keys(chData)) {
+            let dataBits = chData[action];
+
+            for (let bit of dataBits) {
+                yield put(chOut, {
+                    action,
+                    data: bit
+                });
+            }
+        }
+    }
 }
