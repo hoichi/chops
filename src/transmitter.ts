@@ -10,12 +10,12 @@ interface ChannelDeclaration {
     output?: string[];
 }
 
-interface TransformationData {
+export interface TransformationData {
     [channelName: string]: EventData<any>;
 }
 
 interface EventData<T> {
-    [action: string]: T[];
+    [action: string]: ReadonlyArray<T>;
 }
 
 type ChannelListener<T extends ChopData> = (event: ChopEvent<T>) => TransformationData;

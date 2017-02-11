@@ -13,7 +13,7 @@ import {ChoppingBoard} from "./choppingBoard";
 import {FsWriter} from "./fsWriter";
 import {ChopRenderer, TemplateNameCb} from "./renderer";
 import {SortedList, SortIteratee} from "./sortedList";
-import {Transmitter} from "./transmitter";
+import {sendTransformationData, TransformationData, Transmitter} from "./transmitter";
 
 
 export interface CollectionOptions {
@@ -76,6 +76,11 @@ export class Collector extends Transmitter {
     private _filter = (chop) => true;
     private _limit: Number | null = null;
 
+    // hack:
+    private _subs = {
+        getChannel: this.chOut.bind(this)
+    };
+
     set filter(fltrFn) {
         this._filter = fltrFn;
     }
@@ -101,44 +106,58 @@ export class Collector extends Transmitter {
         l('Collection is transmitting. Input channel is...');
 
         go(function *() {
-            let event: ChopEvent<ChopPage>,
-                page,
-                chIn = this.chIn('page'),
-                chOutPg = this.chOut('page');
-
-
-            function pageToEvent(action: string): PageToEvent {
-                return page => ({
-                    action,
-                    data: page
-                });
-            }
+            let chIn = this.chIn('page'),
+                event: ChopEvent<ChopPage>;
 
             while ((event = yield take(chIn)) !== csp.CLOSED) {
-                let {action, data: page} = event,
-                    pages: ChopEvent<any>[] = [];
+                let result = this.onPageEvent(event);
 
-                if (action === 'ready') {
-                    pages = this._list.sort()
-                            .map(pageToEvent('add'));
-                    pages.push({action: 'ready'});  // sending `ready` once
-                } else if (~['add', 'change'].indexOf(action)) {
-                    l(`Collecting the page "${page && page.id}"`);
-                    if (!this._filter(page)) {
-                        yield put(chOutPg, event);  // let it go, it’s not yours
-                        continue;
-                    }
+                console.log('-----');
+                console.dir(result);
+                console.log('-----');
 
-                    pages = this._list.add(page)
-                            .map(pageToEvent(action));
-                }
-
-                if (pages.length) {
-                    yield* this.sendPages(pages);
-                    yield* this.sendCollection(this._list.all);
+                if (Object.keys(result).length) {
+                    yield* sendTransformationData(this._subs, result);
                 }
             }
         }.bind(this));
+    }
+
+    private onPageEvent({action, data: page}: ChopEvent<ChopPage>): TransformationData {
+        let pages = Object.create(null);
+
+        switch (action) {
+            case 'ready':
+                pages = {
+                    add: this._list.sort(),
+                    ready: [null]
+                };
+                break;
+            case 'add':
+            case 'change':
+                l(`Collecting the page "${page && page.id}"`);
+                if (!this._filter(page)) {
+                    // just pass it along
+                    // hack: building TransformationData manually is kinda brittle
+                    pages[action] = [page];
+                    return {'page': pages};
+                }
+
+                let updated = this._list.add(page);
+                if (updated.length) pages[action] = updated;
+                break;
+        }
+
+        return Object.freeze(
+            Object.keys(pages).length
+            ?   { 'page': pages
+                , 'collection': { 'change': [this.updatePostsList(this._list.all)]
+                                } }
+                // q: aren’t we updating too much?
+                // or it doesn’t matter in the immutable world?
+                // we feed all of it to the template anyway
+            : Object.create(null)
+        );
     }
 
     patchData(cb: PatchCallback) {
@@ -158,18 +177,10 @@ export class Collector extends Transmitter {
         return;
     }
 
-    private *sendCollection(posts: ChopPage[]) {
-        // let’s keep the _sortedList private so it doesn’t get overridden
-        // sortBy ‘user space’ calls like `update` or `patchData`
-        this.patchData(() => ({posts}));
-
-        yield put(this.chOut('collection'), {
-            type: 'collection',
-            action: 'change',
-            data: this._data
-        });
-
-        return;
+    private updatePostsList(posts: ReadonlyArray<ChopPage>) {
+        this._data = { ...this._data
+                     , posts };
+        return this._data;
     }
 }
 
