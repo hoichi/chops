@@ -76,11 +76,6 @@ export class Collector extends Transmitter {
     private _filter = (chop) => true;
     private _limit: Number | null = null;
 
-    // hack:
-    private _subs = {
-        getChannel: this.chOut.bind(this)
-    };
-
     set filter(fltrFn) {
         this._filter = fltrFn;
     }
@@ -103,24 +98,7 @@ export class Collector extends Transmitter {
     }
 
     protected startTransmitting() {
-        l('Collection is transmitting. Input channel is...');
-
-        go(function *() {
-            let chIn = this.chIn('page'),
-                event: ChopEvent<ChopPage>;
-
-            while ((event = yield take(chIn)) !== csp.CLOSED) {
-                let result = this.onPageEvent(event);
-
-                console.log('-----');
-                console.dir(result);
-                console.log('-----');
-
-                if (Object.keys(result).length) {
-                    yield* sendTransformationData(this._subs, result);
-                }
-            }
-        }.bind(this));
+        this.addChannelTransformation('page', this.onPageEvent.bind(this));
     }
 
     private onPageEvent({action, data: page}: ChopEvent<ChopPage>): TransformationData {
@@ -154,7 +132,7 @@ export class Collector extends Transmitter {
                 , 'collection': { 'change': [this.updatePostsList(this._list.all)]
                                 } }
                 // q: aren’t we updating too much?
-                // or it doesn’t matter in the immutable world?
+                // maybe it doesn’t matter in the immutable world.
                 // we feed all of it to the template anyway
             : Object.create(null)
         );

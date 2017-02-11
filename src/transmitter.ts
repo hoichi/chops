@@ -2,7 +2,8 @@
  * Created by hoichi on 22.11.2016.
  */
 
-import {Channel, chan, put} from "js-csp";
+import {Channel, chan, go, take, put} from "js-csp";
+import * as csp from "js-csp";
 import {ChopData, ChopEvent, Dictionary} from "./chops";
 
 interface ChannelDeclaration {
@@ -25,6 +26,11 @@ export abstract class Transmitter {
     private _chOut: Dictionary<Channel> = {};
     private _subscribers: Transmitter[] = [];
     private _isTransmitting = false;
+
+    // hack:
+    protected _subs = {
+        getChannel: this.chOut.bind(this)
+    };
 
     protected declareChannels(lists: ChannelDeclaration) {
         (lists.output || []).forEach(s =>
@@ -78,6 +84,31 @@ export abstract class Transmitter {
             this.startTransmitting();
         }
     }
+
+    /**
+     * Attaches a data transformation that happens on a channel input
+     * @param chName            Name of the channel we listen to.
+     * @param transformation    The callback that is given a single input events
+     *                          and returns whatever results should be sent down any channels.
+     */
+    protected addChannelTransformation<T extends ChopData>(
+        chName: string,
+        transformation: ChannelListener<T>
+    ) {
+        go(function *() {
+            let chIn = this.chIn(chName),
+                event: ChopEvent<T>;
+
+            while ((event = yield take(chIn)) !== csp.CLOSED) {
+                let result = transformation(event);
+
+                if (Object.keys(result).length) {
+                    yield* sendTransformationData(this._subs, result);
+                }
+            }
+        }.bind(this));
+    }
+
 
     listenOnChannel(chIn: Channel, subCh: string) {
         let ch = this._chIn[subCh];
