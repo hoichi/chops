@@ -2,19 +2,35 @@
  * Created by hoichi on 22.11.2016.
  */
 
-import {Channel, chan} from "js-csp";
-import {Dictionary} from "./chops";
+import {Channel, chan, go, take, put} from "js-csp";
+import * as csp from "js-csp";
+import {ChopData, ChopEvent, Dictionary} from "./chops";
 
 interface ChannelDeclaration {
     input?: string[];
     output?: string[];
 }
 
+export interface TransformationData {
+    [channelName: string]: EventData<any>;
+}
+
+interface EventData<T> {
+    [action: string]: ReadonlyArray<T>;
+}
+
+type ChannelListener<T extends ChopData> = (event: ChopEvent<T>) => TransformationData;
+
 export abstract class Transmitter {
     private _chIn: Dictionary<Channel> = {};
     private _chOut: Dictionary<Channel> = {};
     private _subscribers: Transmitter[] = [];
     private _isTransmitting = false;
+
+    // hack:
+    protected _subs = {
+        getChannel: this.chOut.bind(this)
+    };
 
     protected declareChannels(lists: ChannelDeclaration) {
         (lists.output || []).forEach(s =>
@@ -69,6 +85,31 @@ export abstract class Transmitter {
         }
     }
 
+    /**
+     * Attaches a data transformation that happens on a channel input
+     * @param chName            Name of the channel we listen to.
+     * @param transformation    The callback that is given a single input events
+     *                          and returns whatever results should be sent down any channels.
+     */
+    protected addChannelTransformation<T extends ChopData>(
+        chName: string,
+        transformation: ChannelListener<T>
+    ) {
+        go(function *() {
+            let chIn = this.chIn(chName),
+                event: ChopEvent<T>;
+
+            while ((event = yield take(chIn)) !== csp.CLOSED) {
+                let result = transformation(event);
+
+                if (Object.keys(result).length) {
+                    yield* sendTransformationData(this._subs, result);
+                }
+            }
+        }.bind(this));
+    }
+
+
     listenOnChannel(chIn: Channel, subCh: string) {
         let ch = this._chIn[subCh];
         if (!ch)
@@ -92,6 +133,51 @@ export abstract class Transmitter {
 }
 
 
-class Subscription {
-    private _chOut: Channel;
+interface ChannelSubscribers {
+    getChannel(name: string): Channel;
+    /*
+    * TODO: add shit later. For now let's
+    *   a) test the pure *sendTransformationData()
+    *   b) wrap the built-in `this._subscriber[]` and `this.chOut()`
+    * */
+}
+
+function ChannelSubscribers(): ChannelSubscribers {
+    let channels: Dictionary<Channel> = Object.create(null),
+        subscribers: Dictionary<Transmitter> = Object.create(null);
+
+    function getChannel(name: string) {
+        let ch = channels[name];
+        if (!ch) throw Error(`Observer for the "${name}" channel doesn’t exist`);
+        return ch;
+    }
+
+/*
+    function setSubscriber(subscriber: Transmitter) {
+
+    }
+*/
+
+    return Object.freeze({
+        getChannel
+    });
+}
+
+export function *sendTransformationData(subs: ChannelSubscribers, data: TransformationData) {
+    for (let chName of Object.keys(data)) {
+        let chOut = subs.getChannel(chName);
+        if (!chOut) continue;
+        let chData = data[chName];
+
+        for (let action of Object.keys(chData)) {
+            let dataBits = chData[action];
+
+            for (let bit of dataBits) {
+                yield put(chOut, {
+                    action,
+                    data: bit
+                });
+            }
+        }
+    }
 }
